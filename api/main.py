@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -28,9 +29,17 @@ POLICY_THRESHOLDS = {"conservative": 0.05, "aggressive": 0.15}
 
 app = FastAPI(title="Credit Risk Analyzer", version="1.0.0")
 
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN")
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    *([FRONTEND_ORIGIN] if FRONTEND_ORIGIN else []),
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
