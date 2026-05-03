@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { humanizeFeatureText } from '../lib/featureLabels.js'
 
 export default function LLMReport({ decision, reason, recommendation, t, hardRuleRejection }) {
   const approved = decision === 'APPROVED'
@@ -21,8 +22,8 @@ export default function LLMReport({ decision, reason, recommendation, t, hardRul
       </div>
 
       <div className="grid gap-6 p-6 md:grid-cols-2">
-        <Section title={t.reason} body={hardRuleRejection || reason || '—'} />
-        <Section title={t.recommendation} body={hardRuleRejection ? '' : recommendation || '—'} />
+        <Section title={t.reason} body={humanizeFeatureText(hardRuleRejection || reason || '-', t)} />
+        <Section title={t.recommendation} body={humanizeFeatureText(recommendation || '-', t)} />
       </div>
     </motion.div>
   )

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 
 const initial = {
   gross_salary: 8000,
@@ -8,9 +7,10 @@ const initial = {
   age: 30,
 }
 
+const plainInputClass = 'w-full rounded-xl border border-white/10 bg-navy-900/60 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none'
+
 export default function UserInputForm({ t, onSubmit, disabled, loading, employmentType, onEmploymentTypeChange }) {
   const [v, setV] = useState(initial)
-  const [showEmploymentHint, setShowEmploymentHint] = useState(false)
 
   const set = (k) => (e) => setV({ ...v, [k]: e.target.value })
 
@@ -34,7 +34,7 @@ export default function UserInputForm({ t, onSubmit, disabled, loading, employme
             step="100"
             value={v.gross_salary}
             onChange={set('gross_salary')}
-            className="input-field"
+            className={plainInputClass}
             required
           />
         </Field>
@@ -46,12 +46,12 @@ export default function UserInputForm({ t, onSubmit, disabled, loading, employme
             step="500"
             value={v.loan_amount}
             onChange={set('loan_amount')}
-            className="input-field"
+            className={plainInputClass}
             required
           />
         </Field>
 
-        <Field label={`${t.loanMonths} — ${v.loan_months}`}>
+        <Field label={`${t.loanMonths} - ${v.loan_months}`}>
           <input
             type="range"
             min="12"
@@ -68,30 +68,13 @@ export default function UserInputForm({ t, onSubmit, disabled, loading, employme
             <select
               value={employmentType}
               onChange={(e) => onEmploymentTypeChange(e.target.value)}
-              onFocus={() => setShowEmploymentHint(true)}
-              onBlur={() => setShowEmploymentHint(false)}
-              onClick={() => setShowEmploymentHint(true)}
               title={t.gosiOverrideHint}
-              className="input-field"
+              className={plainInputClass}
             >
               <option value="government">{t.employmentGov}</option>
               <option value="private">{t.employmentPriv}</option>
               <option value="self">{t.employmentSelf}</option>
             </select>
-            <AnimatePresence>
-              {showEmploymentHint && (
-                <motion.div
-                  key="employment-hint"
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute left-0 right-0 top-full z-10 mt-2 rounded-lg border border-electric-400/30 bg-navy-900/95 p-2.5 text-[11px] leading-snug text-white/80 shadow-glow"
-                >
-                  {t.gosiOverrideHint}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </Field>
 
@@ -102,7 +85,7 @@ export default function UserInputForm({ t, onSubmit, disabled, loading, employme
             max="80"
             value={v.age}
             onChange={set('age')}
-            className="input-field"
+            className={plainInputClass}
             required
           />
         </Field>

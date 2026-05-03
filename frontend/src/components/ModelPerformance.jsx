@@ -12,6 +12,7 @@ import {
   fetchMetricsSummary,
 } from '../lib/api.js'
 import { prettyFeature } from '../lib/featureLabels.js'
+import AnimatedStockChart from './AnimatedStockChart.jsx'
 
 // Headline numbers used as fallback when /metrics-summary is unreachable.
 // Sourced from the last successful CV run.
@@ -110,6 +111,7 @@ function HeroBlock({ t }) {
           label={t.mpStatAuc}
           value={<Counter value={summary.oof_auc} decimals={3} format={(n) => n.toFixed(3)} />}
           desc={t.mpStatAucDesc}
+          extra={t.mpAucKaggleNote}
           accent="growth"
         />
         <Stat
@@ -129,7 +131,7 @@ function HeroBlock({ t }) {
   )
 }
 
-function Stat({ label, value, desc, accent }) {
+function Stat({ label, value, desc, extra, accent }) {
   const text = accent === 'growth' ? 'text-growth-300' : 'text-electric-400'
   const blob = accent === 'growth' ? 'bg-growth-500' : 'bg-electric-500'
   return (
@@ -139,6 +141,11 @@ function Stat({ label, value, desc, accent }) {
         <div className={`text-4xl font-extrabold tracking-tight ${text}`}>{value}</div>
         <p className="mt-3 text-sm text-white/70">{label}</p>
         {desc && <p className="mt-2 text-xs leading-relaxed text-white/55">{desc}</p>}
+        {extra && (
+          <p className="mt-3 border-t border-white/10 pt-3 text-[11px] leading-relaxed text-white/45">
+            {extra}
+          </p>
+        )}
       </div>
     </motion.div>
   )
@@ -155,7 +162,7 @@ function FlowBlock({ t }) {
     { icon: <IconGavel />, label: t.mpStep5 },
   ]
   return (
-    <div className="space-y-8">
+    <div id="how-it-works" className="space-y-8 scroll-mt-20">
       <SectionHeader eyebrow={t.mpFlowEyebrow} title={t.mpFlowTitle} />
       <motion.ol
         variants={{ show: { transition: { staggerChildren: 0.1 } } }}
@@ -317,7 +324,7 @@ function AucGauge({ t }) {
       <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
         <Scale label={t.mpAucScaleRandom} value="0.50" tone="muted" />
         <Scale label={t.mpAucScaleGood} value="0.70" tone="electric" />
-        <Scale label={t.mpAucScaleExcellent} value="0.90" tone="growth" />
+        <Scale label={t.mpAucScaleExcellent} value="0.80" tone="growth" />
       </div>
     </motion.div>
   )
@@ -462,10 +469,10 @@ function DriversBar({ t }) {
       .then((res) => {
         if (cancelled || !res?.drivers?.length) return
         const mapped = res.drivers.map((d) => ({
-          feat: prettyFeature(d.feature),
+          feat: prettyFeature(d.feature, t),
           shap: Number(d.shap_mean_abs ?? 0),
           impact: d.impact === 'good' || d.impact === 'bad' ? d.impact : 'bad',
-          desc: (d.description_key && t[d.description_key]) || prettyFeature(d.feature),
+          desc: (d.description_key && t[d.description_key]) || prettyFeature(d.feature, t),
         }))
         setDrivers(mapped)
       })
@@ -530,7 +537,6 @@ function FairnessBlock({ t }) {
   const cards = [
     { tone: 'warn', icon: <IconWarn />, title: t.mpFairAgeTitle, body: t.mpFairAgeBody },
     { tone: 'info', icon: <IconInfo />, title: t.mpFairBureauTitle, body: t.mpFairBureauBody },
-    { tone: 'flask', icon: <IconFlask />, title: t.mpFairDisclaimerTitle, body: t.mpFairDisclaimerBody },
   ]
   return (
     <div className="space-y-8">
@@ -614,14 +620,6 @@ function IconInfo() {
     </svg>
   )
 }
-function IconFlask() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 3h6M10 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-6-10V3M7 14h10" />
-    </svg>
-  )
-}
-
 // ---------- Page --------------------------------------------------------
 
 export default function ModelPerformance({ t }) {
@@ -630,6 +628,10 @@ export default function ModelPerformance({ t }) {
       id="model-performance"
       className="relative mx-auto max-w-7xl space-y-20 px-6 py-24 scroll-mt-20"
     >
+      <div className="pointer-events-none absolute left-1/2 top-0 z-0 h-[620px] w-screen -translate-x-1/2 overflow-hidden opacity-55">
+        <AnimatedStockChart />
+      </div>
+      <div className="pointer-events-none absolute left-1/2 top-0 z-0 h-[620px] w-screen -translate-x-1/2 bg-gradient-to-b from-transparent via-navy-950/20 to-navy-950" />
       <HeroBlock t={t} />
       <FlowBlock t={t} />
 

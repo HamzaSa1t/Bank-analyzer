@@ -1,45 +1,48 @@
-"""Single source of truth for friendly labels of model feature columns.
-
-Mirrors frontend/src/lib/featureLabels.js — keep both in sync.
-"""
+"""Single source of truth for user-facing model feature labels."""
 
 from __future__ import annotations
 
 FEATURE_LABELS: dict[str, str] = {
-    "EXT_SOURCE_AVG": "Credit Bureau Score (Average)",
-    "EXT_SOURCE_1": "Credit Bureau Score (Source 1)",
-    "EXT_SOURCE_2": "Credit Bureau Score (Source 2)",
-    "EXT_SOURCE_3": "Credit Bureau Score (Source 3)",
-    "SIMAH_SCORE": "SIMAH Score",
-    "AMT_CREDIT": "Loan Amount",
-    "AMT_ANNUITY": "Monthly Installment",
-    "AMT_INCOME_TOTAL": "Monthly Income",
-    "YEARS_EMPLOYED": "Years of Employment",
-    "AGE_YEARS": "Applicant Age",
-    "DBR": "Debt Burden Ratio",
-    "CREDIT_INCOME_RATIO": "Loan-to-Income Ratio",
-    "INSTAL_PCT_LATE": "Late Payment Rate",
-    "INSTAL_DAYS_LATE_MAX": "Worst Payment Delay (Days)",
-    "INSTAL_DAYS_LATE_MEAN": "Average Payment Delay (Days)",
-    "INSTAL_PAYMENT_RATE": "Installment Payment Rate",
-    "BUREAU_CREDIT_AGE_MAX": "Credit History Length",
-    "BUREAU_MAX_OVERDUE": "Highest Overdue Amount",
-    "BUREAU_DAYS_OVERDUE_MAX": "Longest Overdue Period",
-    "BUREAU_DEBT_TOTAL": "Total Bureau Debt",
-    "BUREAU_LIMIT_TOTAL": "Total Credit Limit",
-    "BUREAU_UTIL_RATIO": "Credit Utilization Ratio",
-    "BUREAU_ACTIVE_COUNT": "Active Loans Count",
-    "BUREAU_PROLONGED_COUNT": "Prolonged Loans Count",
-    "CARD_UTIL_RATIO_AVG": "Credit Card Utilization (Average)",
-    "CARD_UTIL_RATIO_MAX": "Credit Card Utilization (Maximum)",
-    "CARD_DPD_MAX": "Credit Card Max Days Past Due",
-    "CARD_PAYMENT_RATIO": "Credit Card Payment Ratio",
-    "CARD_MONTHS_ACTIVE": "Credit Card Active Months",
-    "IS_EMPLOYED": "Employment Status",
-    "AMT_REQ_CREDIT_BUREAU_MON": "Credit Inquiries (Last Month)",
+    "EXT_SOURCE_AVG": "Overall credit history strength",
+    "EXT_SOURCE_1": "Credit history strength",
+    "EXT_SOURCE_2": "Repayment behavior score",
+    "EXT_SOURCE_3": "External credit profile score",
+    "SIMAH_SCORE": "Simulated credit score",
+    "AMT_CREDIT": "Requested loan amount",
+    "AMT_GOODS_PRICE": "Estimated financed item value",
+    "AMT_ANNUITY": "Monthly payment amount",
+    "AMT_INCOME_TOTAL": "Monthly income",
+    "YEARS_EMPLOYED": "Employment length",
+    "AGE_YEARS": "Applicant age",
+    "DBR": "Monthly debt burden",
+    "CREDIT_INCOME_RATIO": "Loan size compared with income",
+    "INSTAL_PCT_LATE": "Late payment history",
+    "INSTAL_DAYS_LATE_MAX": "Worst payment delay",
+    "INSTAL_DAYS_LATE_MEAN": "Average payment delay",
+    "INSTAL_PAYMENT_RATE": "Past payment consistency",
+    "BUREAU_CREDIT_AGE_MAX": "Credit history length",
+    "BUREAU_MAX_OVERDUE": "Highest overdue balance",
+    "BUREAU_DAYS_OVERDUE_MAX": "Longest overdue period",
+    "BUREAU_DEBT_TOTAL": "Existing credit obligations",
+    "BUREAU_LIMIT_TOTAL": "Available credit limit",
+    "BUREAU_UTIL_RATIO": "Credit usage level",
+    "BUREAU_ACTIVE_COUNT": "Number of active loans",
+    "BUREAU_PROLONGED_COUNT": "Repeated loan extensions",
+    "CARD_UTIL_RATIO_AVG": "Average card usage",
+    "CARD_UTIL_RATIO_MAX": "Highest card usage",
+    "CARD_DPD_MAX": "Worst card payment delay",
+    "CARD_PAYMENT_RATIO": "Card repayment consistency",
+    "CARD_MONTHS_ACTIVE": "Recent card activity",
+    "IS_EMPLOYED": "Stable employment status",
+    "AMT_REQ_CREDIT_BUREAU_MON": "Recent credit applications",
+    "ANNUITY_CREDIT_RATIO": "Monthly payment pressure",
+    "GOODS_CREDIT_RATIO": "Financed amount compared with item value",
+    "BUREAU_DEBT_CREDIT_RATIO_MAX": "Highest debt pressure on existing credit",
+    "OWN_CAR_AGE": "Vehicle age",
+    "CODE_GENDER_M": "Applicant gender",
 }
 
 
 def pretty_feature(name: str) -> str:
-    """Return the friendly label for a feature, falling back to the raw name."""
+    """Return the user-facing label for a feature, falling back to the raw name."""
     return FEATURE_LABELS.get(name, name)

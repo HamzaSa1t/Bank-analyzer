@@ -20,7 +20,7 @@ const item = {
 export default function Hero({ t, onPrimary, onSecondary }) {
   return (
     <section id="home" className="relative isolate overflow-hidden">
-      <AnimatedStockChart />
+      <AnimatedStockChart t={t} />
 
       <div className="relative mx-auto flex min-h-[88vh] max-w-7xl flex-col items-center justify-center px-6 py-24 text-center">
         <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
@@ -45,6 +45,13 @@ export default function Hero({ t, onPrimary, onSecondary }) {
             className="mx-auto max-w-2xl text-base text-white/60 sm:text-lg"
           >
             {t.heroSub}
+          </motion.p>
+
+          <motion.p
+            variants={item}
+            className="mx-auto max-w-2xl text-sm text-white/45"
+          >
+            {t.heroDesc}
           </motion.p>
 
           <motion.div variants={item} className="flex flex-wrap items-center justify-center gap-4">

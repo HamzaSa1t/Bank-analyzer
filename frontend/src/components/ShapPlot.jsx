@@ -16,7 +16,7 @@ export default function ShapPlot({ top5, t }) {
                 key={i}
                 className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
               >
-                <span className="truncate text-white/80">{prettyFeature(d.feature)}</span>
+                <span className="truncate text-white/80">{prettyFeature(d.feature, t)}</span>
                 <span
                   className={`font-mono text-xs ${
                     positive ? 'text-red-300' : 'text-growth-300'

@@ -19,7 +19,8 @@ frontend/dist/
 
 data/*.csv
 data/*.zip
-data/processed/
+data/processed/*
+!data/processed/features_sample.csv
 
 *.log
 .DS_Store

@@ -18,6 +18,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.stock-chart-scroll {
+  animation: stock-chart-scroll 26s linear infinite;
+  will-change: transform;
+}
+
+@keyframes stock-chart-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-1600px);
+  }
+}
+
 [dir="rtl"] body, [dir="rtl"] {
   font-family: 'Cairo', 'Inter', sans-serif;
 }

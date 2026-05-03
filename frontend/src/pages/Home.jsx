@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useAssessment } from '../hooks/useAssessment.js'
 
 import Hero from '../components/Hero.jsx'
-import ResultsThatMatter from '../components/ResultsThatMatter.jsx'
 import BankSelector from '../components/BankSelector.jsx'
 import UserInputForm from '../components/UserInputForm.jsx'
 import SimahPanel from '../components/SimahPanel.jsx'
@@ -13,7 +13,10 @@ import ResultsDashboard from '../components/ResultsDashboard.jsx'
 export default function Home({ t, lang }) {
   const a = useAssessment({ lang })
   const appRef = useRef(null)
+  const applyRef = useRef(null)
+  const simahRef = useRef(null)
   const reportRef = useRef(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (a.result && reportRef.current) {
@@ -21,19 +24,35 @@ export default function Home({ t, lang }) {
     }
   }, [a.result])
 
-  const scrollToApp = () => {
-    appRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const scrollToApply = () => {
+    applyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const scrollToSimah = () => {
+    simahRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const selectBank = (bankType) => {
+    a.setBankType(bankType)
+    requestAnimationFrame(() => setTimeout(scrollToSimah, 80))
+  }
+
+  const goToHowItWorks = () => {
+    navigate('/model-performance')
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
+      }, 80)
+    })
   }
 
   return (
     <>
       <Hero
         t={t}
-        onPrimary={scrollToApp}
-        onSecondary={() => document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' })}
+        onPrimary={scrollToApply}
+        onSecondary={goToHowItWorks}
       />
-
-      <ResultsThatMatter t={t} />
 
       <main
         id="how"
@@ -55,18 +74,22 @@ export default function Home({ t, lang }) {
           </h2>
         </motion.div>
 
-        <BankSelector
-          t={t}
-          value={a.bankType}
-          onSelect={a.setBankType}
-        />
+        <div id="apply" ref={applyRef} className="scroll-mt-20">
+          <BankSelector
+            t={t}
+            value={a.bankType}
+            onSelect={selectBank}
+          />
+        </div>
 
-        <SimahPanel
-          t={t}
-          simah={a.simah}
-          onSimulate={a.runSimulateBureau}
-          loading={a.bureauLoading}
-        />
+        <div ref={simahRef} className="scroll-mt-24">
+          <SimahPanel
+            t={t}
+            simah={a.simah}
+            onSimulate={a.runSimulateBureau}
+            loading={a.bureauLoading}
+          />
+        </div>
 
         <GosiPanel
           t={t}

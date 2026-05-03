@@ -4,9 +4,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 export default function Navigation({ t, lang, onLangChange }) {
   const items = [
     { key: 'navHome', kind: 'anchor', id: 'home' },
-    { key: 'navHowItWorks', kind: 'anchor', id: 'how' },
-    { key: 'navResults', kind: 'anchor', id: 'results' },
-    { key: 'navModelPerformance', kind: 'route', to: '/model-performance' },
+    { key: 'navApply', kind: 'anchor', id: 'apply' },
+    { key: 'navHowItWorks', kind: 'route-anchor', to: '/model-performance', id: 'how-it-works' },
+    { key: 'navModelPerformance', kind: 'route-anchor', to: '/model-performance', id: 'model-performance' },
     { key: 'navContact', kind: 'anchor', id: 'contact' },
   ]
 
@@ -17,18 +17,18 @@ export default function Navigation({ t, lang, onLangChange }) {
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className="sticky top-0 z-40 w-full backdrop-blur-md bg-navy-950/40 border-b border-white/5"
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
         <Link to="/" className="flex items-center gap-2 text-white">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-electric-500 to-growth-500 shadow-glow">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="white" strokeWidth="2.5">
+          <span className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-electric-500 to-growth-500 shadow-glow">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M3 17l6-6 4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M14 7h7v7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          <span className="text-sm font-semibold tracking-wide">{t.brand}</span>
+          <span className="text-base font-semibold tracking-wide">{t.brand}</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-9">
           {items.map(it => (
             <NavItem key={it.key} item={it} label={t[it.key]} />
           ))}
@@ -53,10 +53,31 @@ export default function Navigation({ t, lang, onLangChange }) {
 function NavItem({ item, label }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const className = 'text-sm text-white/70 transition hover:text-white'
+  const className = 'text-[15px] text-white/70 transition hover:text-white'
 
   if (item.kind === 'route') {
     return <Link to={item.to} className={className}>{label}</Link>
+  }
+
+  // Cross-route anchor: navigate to a different route, then scroll to a section there.
+  if (item.kind === 'route-anchor') {
+    const handleClick = (e) => {
+      e.preventDefault()
+      const scroll = () => {
+        document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })
+      }
+      if (location.pathname === item.to) {
+        scroll()
+      } else {
+        navigate(item.to)
+        requestAnimationFrame(() => { setTimeout(scroll, 80) })
+      }
+    }
+    return (
+      <a href={`${item.to}#${item.id}`} onClick={handleClick} className={className}>
+        {label}
+      </a>
+    )
   }
 
   // Anchor: scroll on the home route, navigate then scroll otherwise.
@@ -100,7 +121,7 @@ function CtaButton({ label }) {
   }
 
   return (
-    <button type="button" onClick={handleClick} className="btn-primary !py-2 !px-5 !text-sm">
+    <button type="button" onClick={handleClick} className="btn-primary !py-2.5 !px-6 !text-sm">
       {label}
     </button>
   )

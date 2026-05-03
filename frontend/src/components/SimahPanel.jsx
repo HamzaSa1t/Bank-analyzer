@@ -15,6 +15,7 @@ export default function SimahPanel({ t, simah, onSimulate, loading }) {
         <div>
           <span className="label-muted block">01</span>
           <h3 className="mt-1 text-xl font-semibold">{t.simahTitle}</h3>
+          <p className="mt-2 max-w-xl text-sm text-white/55">{t.simahHelper}</p>
         </div>
         <button
           type="button"

@@ -7,7 +7,7 @@ const banks = [
     descKey: 'bankConservativeDesc',
     pd: '5%',
     minScore: '650',
-    rate: '2–4%',
+    approvalKey: 'approvalStrict',
     accent: 'electric',
   },
   {
@@ -16,7 +16,7 @@ const banks = [
     descKey: 'bankAggressiveDesc',
     pd: '15%',
     minScore: '480',
-    rate: '7–15%',
+    approvalKey: 'approvalFlexible',
     accent: 'growth',
   },
 ]
@@ -29,12 +29,21 @@ export default function BankSelector({ t, value, onSelect }) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
-        className="mb-8 text-2xl font-bold sm:text-3xl"
+        className="text-2xl font-bold sm:text-3xl"
       >
         {t.pickBank}
       </motion.h2>
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.05 }}
+        className="mb-8 mt-2 max-w-2xl text-sm text-white/55"
+      >
+        {t.pickBankSub}
+      </motion.p>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2" id="bank-cards">
         {banks.map((b, i) => {
           const selected = value === b.type
           const accentRing = b.accent === 'growth' ? 'ring-growth-400' : 'ring-electric-400'
@@ -72,13 +81,17 @@ export default function BankSelector({ t, value, onSelect }) {
                 <div className="grid grid-cols-3 gap-3 pt-2">
                   <Stat label={t.pdThreshold} value={b.pd} accent={accentText} />
                   <Stat label={t.minScore} value={b.minScore} accent={accentText} />
-                  <Stat label={t.interestRate} value={b.rate} accent={accentText} />
+                  <Stat label={t.approvalStyle} value={t[b.approvalKey]} accent={accentText} />
                 </div>
               </div>
             </motion.button>
           )
         })}
       </div>
+
+      <p className="mt-6 text-center text-xs text-white/40">
+        {t.bankCardsDisclaimer}
+      </p>
     </section>
   )
 }

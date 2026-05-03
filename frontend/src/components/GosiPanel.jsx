@@ -12,6 +12,7 @@ export default function GosiPanel({ t, gosi }) {
       <div>
         <span className="label-muted block">01b</span>
         <h3 className="mt-1 text-xl font-semibold">{t.gosiTitle}</h3>
+        <p className="mt-2 max-w-xl text-sm text-white/55">{t.gosiHelper}</p>
       </div>
 
       <AnimatePresence mode="wait">
