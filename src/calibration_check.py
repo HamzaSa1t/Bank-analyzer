@@ -1,18 +1,20 @@
-"""Calibration check for the trained XGBoost credit-risk model.
+"""Calibration check on out-of-fold (OOF) predictions.
 
-Read-only: loads model.pkl + features.csv, reproduces the same train/test split
-as src/train.py, and evaluates calibration on the held-out test set.
+Read-only. Loads models/oof_predictions.csv produced by src/train.py — every
+row's PD comes from a model that never trained on it, so the reliability
+table is unbiased.
 
 Outputs:
-    models/calibration_curve.png   — reliability diagram (10 equal-width bins)
-    stdout                          — Brier score, per-bucket table, verdict
+    models/calibration_curve.png    — reliability diagram (10 equal-width bins)
+    models/calibration_buckets.json — bucket table for the frontend
+    stdout                           — Brier score, per-bucket table, verdict
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
-import joblib
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -20,45 +22,34 @@ import numpy as np
 import pandas as pd
 
 from sklearn.metrics import brier_score_loss
-from sklearn.model_selection import train_test_split
 
 ROOT = Path(__file__).resolve().parents[1]
-FEATURES_CSV = ROOT / "data" / "processed" / "features.csv"
-MODEL_PATH = ROOT / "models" / "model.pkl"
-FEATURE_COLS_PATH = ROOT / "models" / "feature_cols.pkl"
+OOF_PATH = ROOT / "models" / "oof_predictions.csv"
 PLOT_PATH = ROOT / "models" / "calibration_curve.png"
+BUCKETS_PATH = ROOT / "models" / "calibration_buckets.json"
 
 N_BINS = 10
 
 
 def main() -> None:
-    print(f"Loading {FEATURES_CSV} ...")
-    df = pd.read_csv(FEATURES_CSV)
-    feature_cols = joblib.load(FEATURE_COLS_PATH)
-    model = joblib.load(MODEL_PATH)
+    if not OOF_PATH.exists():
+        raise SystemExit(
+            f"{OOF_PATH} not found. Run `python src/train.py` first — it now "
+            "saves OOF predictions for honest downstream evaluation."
+        )
 
-    X = df[feature_cols]
-    y = df["TARGET"].astype(int)
+    print(f"Loading {OOF_PATH} ...")
+    oof = pd.read_csv(OOF_PATH)
+    y_true = oof["TARGET"].to_numpy()
+    y_prob = oof["PD_OOF"].to_numpy()
 
-    # Reproduce the EXACT split src/train.py used so we evaluate on data the
-    # model never saw at fit time (random_state=42, stratify=y, test_size=0.2).
-    _, X_test, _, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=42,
-    )
-    y_true = y_test.to_numpy()
-    y_prob = model.predict_proba(X_test)[:, 1]
-
-    print(f"Test set size: {len(y_true):,}")
+    print(f"OOF rows: {len(y_true):,}")
     print(f"Empirical default rate: {y_true.mean():.4f}")
     print(f"Mean predicted PD:      {y_prob.mean():.4f}")
 
-    # Brier score: mean squared error between predicted prob and actual outcome.
-    # Lower is better; 0 is perfect, 0.25 is the "always 0.5" baseline.
     brier = brier_score_loss(y_true, y_prob)
     print(f"\nBrier score: {brier:.6f}")
 
-    # Equal-width buckets across [0, 1]. We use 10 bins for legibility; ECE is
-    # the bucket-size-weighted mean absolute calibration gap.
     bin_edges = np.linspace(0.0, 1.0, N_BINS + 1)
     bin_idx = np.clip(np.digitize(y_prob, bin_edges, right=True) - 1, 0, N_BINS - 1)
 
@@ -86,8 +77,6 @@ def main() -> None:
 
     print(f"\nExpected Calibration Error (ECE, weighted by bin count): {weighted_abs_err:.4f}")
 
-    # Verdict — credit-risk-friendly thresholds. Brier is informative but ECE
-    # is the direct "are predicted PDs trustworthy as PDs?" measure.
     if weighted_abs_err < 0.02:
         verdict = "WELL CALIBRATED"
         explanation = "Predicted PDs match observed default rates to within 2%."
@@ -101,9 +90,6 @@ def main() -> None:
         verdict = "POORLY CALIBRATED"
         explanation = "PDs do not reflect true default probabilities; recalibrate before using thresholds."
 
-    # Reliability diagram — predicted vs. actual per bin, with the diagonal as
-    # the perfectly-calibrated reference. Also overlay the count-weighted bars
-    # along the bottom so the reader sees where the data actually sits.
     valid = [(mp, ar, n) for _, _, _, n, mp, ar, _ in rows if n > 0]
     pred_vals = np.array([r[0] for r in valid])
     actual_vals = np.array([r[1] for r in valid])
@@ -118,16 +104,54 @@ def main() -> None:
     ax2.set_yscale("log")
     ax.set_xlabel("Predicted PD (bin mean)")
     ax.set_ylabel("Empirical default rate")
-    ax.set_xlim(0, max(0.5, pred_vals.max() + 0.05))
-    ax.set_ylim(0, max(0.5, actual_vals.max() + 0.05))
-    ax.set_title(f"Reliability diagram — Brier={brier:.4f}, ECE={weighted_abs_err:.4f}")
+    ax.set_xlim(0, max(0.5, float(pred_vals.max()) + 0.05))
+    ax.set_ylim(0, max(0.5, float(actual_vals.max()) + 0.05))
+    ax.set_title(f"Reliability diagram (OOF) — Brier={brier:.4f}, ECE={weighted_abs_err:.4f}")
     ax.grid(True, alpha=0.3)
     ax.legend(loc="upper left")
     fig.tight_layout()
     fig.savefig(PLOT_PATH, dpi=120, bbox_inches="tight")
     plt.close(fig)
 
+    # Frontend-friendly bucket export. Predicted/actual are in PERCENT to match
+    # the chart's existing axis. We collapse 60-100% into one tail bucket because
+    # default rates are rare there and per-bin counts get noisy.
+    front_buckets = []
+    tail_count = tail_pred = tail_actual = 0.0
+    for b, lo, hi, n, mp, ar, _ in rows:
+        if n == 0:
+            continue
+        if lo >= 0.60:
+            tail_count += n
+            tail_pred += mp * n
+            tail_actual += ar * n
+            continue
+        front_buckets.append({
+            "bucket": f"{int(lo * 100)}–{int(hi * 100)}%",
+            "predicted": round(mp * 100, 1),
+            "actual": round(ar * 100, 1),
+            "count": int(n),
+        })
+    if tail_count > 0:
+        front_buckets.append({
+            "bucket": "60%+",
+            "predicted": round((tail_pred / tail_count) * 100, 1),
+            "actual": round((tail_actual / tail_count) * 100, 1),
+            "count": int(tail_count),
+        })
+
+    payload = {
+        "buckets": front_buckets,
+        "brier": round(float(brier), 6),
+        "ece": round(float(weighted_abs_err), 6),
+        "n_total": int(len(y_true)),
+        "verdict": verdict,
+        "source": "OOF (5-fold StratifiedKFold)",
+    }
+    BUCKETS_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
     print(f"\nReliability diagram saved to: {PLOT_PATH}")
+    print(f"Bucket JSON saved to:         {BUCKETS_PATH}")
     print(f"\nVerdict: {verdict}")
     print(explanation)
 

@@ -5,7 +5,40 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, Legend,
   LineChart, Line,
 } from 'recharts'
-import { fetchModelPerformance } from '../lib/api.js'
+import {
+  fetchModelPerformance,
+  fetchCalibration,
+  fetchFeatureImportance,
+  fetchMetricsSummary,
+} from '../lib/api.js'
+import { prettyFeature } from '../lib/featureLabels.js'
+
+// Headline numbers used as fallback when /metrics-summary is unreachable.
+// Sourced from the last successful CV run.
+const SUMMARY_FALLBACK = {
+  oof_auc: 0.787,
+  n_total: 307511,
+  brier_score: 0.0659,
+}
+
+function useMetricsSummary() {
+  const [summary, setSummary] = useState(SUMMARY_FALLBACK)
+  useEffect(() => {
+    let cancelled = false
+    fetchMetricsSummary()
+      .then((res) => {
+        if (cancelled || !res) return
+        setSummary({
+          oof_auc: Number(res.oof_auc ?? SUMMARY_FALLBACK.oof_auc),
+          n_total: Number(res.n_total ?? SUMMARY_FALLBACK.n_total),
+          brier_score: Number(res.brier_score ?? SUMMARY_FALLBACK.brier_score),
+        })
+      })
+      .catch(() => { /* keep fallback */ })
+    return () => { cancelled = true }
+  }, [])
+  return summary
+}
 
 // ---------- shared bits -------------------------------------------------
 
@@ -58,6 +91,7 @@ function Counter({ value, decimals = 0, format = (n) => n.toLocaleString() }) {
 // ---------- Section 1: Hero ---------------------------------------------
 
 function HeroBlock({ t }) {
+  const summary = useMetricsSummary()
   return (
     <div className="space-y-8">
       <SectionHeader
@@ -74,19 +108,19 @@ function HeroBlock({ t }) {
       >
         <Stat
           label={t.mpStatAuc}
-          value={<Counter value={0.757} decimals={3} format={(n) => n.toFixed(3)} />}
+          value={<Counter value={summary.oof_auc} decimals={3} format={(n) => n.toFixed(3)} />}
           desc={t.mpStatAucDesc}
           accent="growth"
         />
         <Stat
           label={t.mpStatApplicants}
-          value={<Counter value={61503} format={(n) => n.toLocaleString()} />}
+          value={<Counter value={summary.n_total} format={(n) => n.toLocaleString()} />}
           desc={t.mpStatApplicantsDesc}
           accent="electric"
         />
         <Stat
           label={t.mpStatEce}
-          value={<Counter value={0.0012} decimals={4} format={(n) => n.toFixed(4)} />}
+          value={<Counter value={summary.brier_score} decimals={4} format={(n) => n.toFixed(4)} />}
           desc={t.mpStatEceDesc}
           accent="growth"
         />
@@ -254,7 +288,8 @@ function PolicyCard({ t, title, tone, values }) {
 // ---------- Section 3a: AUC gauge ---------------------------------------
 
 function AucGauge({ t }) {
-  const auc = 0.757
+  const summary = useMetricsSummary()
+  const auc = summary.oof_auc
   const data = [{ name: 'auc', value: auc * 100, fill: '#34e89f' }]
   return (
     <motion.div
@@ -304,10 +339,25 @@ function Scale({ label, value, tone }) {
 // ---------- Section 3b: Approval / Recall by threshold ------------------
 
 function ThresholdsBar({ t }) {
-  const data = [
-    { name: t.mpThrConservative, approval: 48, recall: 83 },
-    { name: t.mpThrAggressive, approval: 86, recall: 43 },
+  const FALLBACK = [
+    { name: t.mpThrConservative, approval: 52, recall: 84 },
+    { name: t.mpThrAggressive, approval: 85, recall: 47 },
   ]
+  const [data, setData] = useState(FALLBACK)
+  useEffect(() => {
+    let cancelled = false
+    fetchModelPerformance()
+      .then((res) => {
+        if (cancelled || !res?.conservative || !res?.aggressive) return
+        const pct = (n) => Math.round(Number(n ?? 0) * 100)
+        setData([
+          { name: t.mpThrConservative, approval: pct(res.conservative.approval_rate), recall: pct(res.conservative.recall) },
+          { name: t.mpThrAggressive,   approval: pct(res.aggressive.approval_rate),   recall: pct(res.aggressive.recall) },
+        ])
+      })
+      .catch(() => { /* keep fallback */ })
+    return () => { cancelled = true }
+  }, [t.mpThrConservative, t.mpThrAggressive])
   return (
     <motion.div
       variants={fadeUp}
@@ -341,9 +391,10 @@ function ThresholdsBar({ t }) {
 // ---------- Section 3c: Calibration -------------------------------------
 
 function CalibrationLine({ t }) {
-  // Source: src/calibration_check.py output on the held-out test split (n=61,503).
-  // Values are bin-mean predicted PD vs empirical default rate, in percent.
-  const buckets = [
+  // Source: src/calibration_check.py — OOF reliability table from
+  // models/calibration_buckets.json (served by /calibration). Bin-mean predicted
+  // PD vs empirical default rate, in percent.
+  const FALLBACK = [
     { bucket: '0–10%', predicted: 4.3, actual: 4.3 },
     { bucket: '10–20%', predicted: 14.0, actual: 14.2 },
     { bucket: '20–30%', predicted: 24.1, actual: 24.4 },
@@ -352,6 +403,14 @@ function CalibrationLine({ t }) {
     { bucket: '50–60%', predicted: 54.0, actual: 58.9 },
     { bucket: '60%+', predicted: 64.6, actual: 71.4 },
   ]
+  const [buckets, setBuckets] = useState(FALLBACK)
+  useEffect(() => {
+    let cancelled = false
+    fetchCalibration()
+      .then((res) => { if (!cancelled && res?.buckets?.length) setBuckets(res.buckets) })
+      .catch(() => { /* keep fallback */ })
+    return () => { cancelled = true }
+  }, [])
   return (
     <motion.div
       variants={fadeUp}
@@ -382,9 +441,9 @@ function CalibrationLine({ t }) {
 // ---------- Section 4: Top decision drivers -----------------------------
 
 function DriversBar({ t }) {
-  // Source: src/feature_importance.py — top 10 by SHAP mean |value| on the held-out
-  // test split (n=5,000 sample). Numbers are mean absolute SHAP contributions.
-  const drivers = [
+  // Source: src/feature_importance.py — top features by SHAP mean |value| on a
+  // 5,000-row stratified sample, served from /feature-importance.
+  const FALLBACK = [
     { feat: t.mpDriverBureauAvg,    shap: 0.573, impact: 'good', desc: t.mpDriverBureauAvgDesc },
     { feat: t.mpDriverInstalLate,   shap: 0.121, impact: 'bad',  desc: t.mpDriverInstalLateDesc },
     { feat: t.mpDriverBureau1,      shap: 0.119, impact: 'good', desc: t.mpDriverBureauDesc },
@@ -396,6 +455,23 @@ function DriversBar({ t }) {
     { feat: t.mpDriverInstall,      shap: 0.077, impact: 'bad',  desc: t.mpDriverInstallDesc },
     { feat: t.mpDriverCardActive,   shap: 0.075, impact: 'good', desc: t.mpDriverCardActiveDesc },
   ]
+  const [drivers, setDrivers] = useState(FALLBACK)
+  useEffect(() => {
+    let cancelled = false
+    fetchFeatureImportance()
+      .then((res) => {
+        if (cancelled || !res?.drivers?.length) return
+        const mapped = res.drivers.map((d) => ({
+          feat: prettyFeature(d.feature),
+          shap: Number(d.shap_mean_abs ?? 0),
+          impact: d.impact === 'good' || d.impact === 'bad' ? d.impact : 'bad',
+          desc: (d.description_key && t[d.description_key]) || prettyFeature(d.feature),
+        }))
+        setDrivers(mapped)
+      })
+      .catch(() => { /* keep fallback */ })
+    return () => { cancelled = true }
+  }, [])
   const data = [...drivers].reverse() // recharts horizontal bars: top of chart = last item
   return (
     <div className="space-y-8">

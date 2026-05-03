@@ -1,0 +1,51 @@
+{
+  "buckets": [
+    {
+      "bucket": "0\u201310%",
+      "predicted": 4.0,
+      "actual": 3.9,
+      "count": 231301
+    },
+    {
+      "bucket": "10\u201320%",
+      "predicted": 14.0,
+      "actual": 14.7,
+      "count": 48106
+    },
+    {
+      "bucket": "20\u201330%",
+      "predicted": 24.3,
+      "actual": 24.4,
+      "count": 16274
+    },
+    {
+      "bucket": "30\u201340%",
+      "predicted": 34.3,
+      "actual": 33.6,
+      "count": 6850
+    },
+    {
+      "bucket": "40\u201350%",
+      "predicted": 44.3,
+      "actual": 42.5,
+      "count": 2994
+    },
+    {
+      "bucket": "50\u201360%",
+      "predicted": 54.2,
+      "actual": 54.8,
+      "count": 1331
+    },
+    {
+      "bucket": "60%+",
+      "predicted": 66.7,
+      "actual": 64.4,
+      "count": 655
+    }
+  ],
+  "brier": 0.065893,
+  "ece": 0.002013,
+  "n_total": 307511,
+  "verdict": "WELL CALIBRATED",
+  "source": "OOF (5-fold StratifiedKFold)"
+}

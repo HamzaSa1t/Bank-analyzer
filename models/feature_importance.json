@@ -1,0 +1,82 @@
+{
+  "drivers": [
+    {
+      "feature": "EXT_SOURCE_AVG",
+      "shap_mean_abs": 0.4362,
+      "rank_shap": 1,
+      "impact": "good",
+      "description_key": "drv_EXT_SOURCE_AVG"
+    },
+    {
+      "feature": "ANNUITY_CREDIT_RATIO",
+      "shap_mean_abs": 0.1167,
+      "rank_shap": 2,
+      "impact": "neutral",
+      "description_key": "drv_ANNUITY_CREDIT_RATIO"
+    },
+    {
+      "feature": "GOODS_CREDIT_RATIO",
+      "shap_mean_abs": 0.1127,
+      "rank_shap": 3,
+      "impact": "neutral",
+      "description_key": "drv_GOODS_CREDIT_RATIO"
+    },
+    {
+      "feature": "BUREAU_DEBT_CREDIT_RATIO_MAX",
+      "shap_mean_abs": 0.1079,
+      "rank_shap": 4,
+      "impact": "bad",
+      "description_key": "drv_BUREAU_DEBT_CREDIT_RATIO_MAX"
+    },
+    {
+      "feature": "AMT_ANNUITY",
+      "shap_mean_abs": 0.0969,
+      "rank_shap": 5,
+      "impact": "bad",
+      "description_key": "drv_AMT_ANNUITY"
+    },
+    {
+      "feature": "INSTAL_PCT_LATE",
+      "shap_mean_abs": 0.0867,
+      "rank_shap": 6,
+      "impact": "bad",
+      "description_key": "drv_INSTAL_PCT_LATE"
+    },
+    {
+      "feature": "YEARS_EMPLOYED",
+      "shap_mean_abs": 0.0846,
+      "rank_shap": 7,
+      "impact": "good",
+      "description_key": "drv_YEARS_EMPLOYED"
+    },
+    {
+      "feature": "OWN_CAR_AGE",
+      "shap_mean_abs": 0.0837,
+      "rank_shap": 8,
+      "impact": "neutral",
+      "description_key": "drv_OWN_CAR_AGE"
+    },
+    {
+      "feature": "AGE_YEARS",
+      "shap_mean_abs": 0.0824,
+      "rank_shap": 9,
+      "impact": "good",
+      "description_key": "drv_AGE_YEARS"
+    },
+    {
+      "feature": "CODE_GENDER_M",
+      "shap_mean_abs": 0.0748,
+      "rank_shap": 10,
+      "impact": "neutral",
+      "description_key": "drv_CODE_GENDER_M"
+    }
+  ],
+  "n_features": 289,
+  "shap_sample_size": 5000,
+  "concentration": {
+    "top_50_pct": 21,
+    "top_80_pct": 60,
+    "top_95_pct": 113
+  },
+  "source": "SHAP mean |value| on stratified 5000-row sample"
+}

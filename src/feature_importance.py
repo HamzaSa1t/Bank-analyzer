@@ -1,24 +1,29 @@
 """Feature importance + sanity check for the trained XGBoost credit-risk model.
 
-Read-only. Computes three complementary importance views on the held-out test
-split, ranks features by SHAP mean |value|, flags suspicious / redundant
-features, and saves separate plots per method.
+Read-only. Computes three complementary importance views:
+    1. XGBoost built-in (weight, gain, cover) — model-only, no data needed
+    2. SHAP values on a stratified sample — attribution, not generalization
+    3. Permutation importance — uses the OOF predictions as the baseline AUC
 
-Methods:
-    1. XGBoost built-in (weight, gain, cover)
-    2. SHAP values (beeswarm + mean-|SHAP| bar)
-    3. Permutation importance on test AUC
+Notes on data choice
+--------------------
+The final model in models/model.pkl was retrained on ALL rows after CV picked
+n_estimators, so any train/test split here would leak. SHAP is fine on training
+data (it's an attribution measure, not a generalization metric). Permutation
+importance, which DOES need unseen data, is computed against an OOF baseline
+using a fast rebuild on a single fold.
 
 Outputs:
     models/importance_xgb.png
     models/importance_shap_beeswarm.png
     models/importance_shap_bar.png
-    models/importance_permutation.png
-    stdout — combined table (top 15 by SHAP) + suspicious-feature flags + verdict
+    models/feature_importance.json   — top features for the frontend
+    stdout — combined table (top 15 by SHAP) + suspicious-feature flags
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import joblib
@@ -29,28 +34,87 @@ import numpy as np
 import pandas as pd
 
 import shap
-from sklearn.inspection import permutation_importance
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import train_test_split
 
 ROOT = Path(__file__).resolve().parents[1]
 FEATURES_CSV = ROOT / "data" / "processed" / "features.csv"
 MODEL_PATH = ROOT / "models" / "model.pkl"
 FEATURE_COLS_PATH = ROOT / "models" / "feature_cols.pkl"
 MODELS_DIR = ROOT / "models"
+DRIVERS_PATH = MODELS_DIR / "feature_importance.json"
 
 TOP_N = 15
+TOP_N_FRONTEND = 10
 SHAP_SAMPLE = 5000
-PERM_REPEATS = 5
 RANDOM_STATE = 42
+
+# Heuristic: features whose name suggests they make default LESS likely when
+# the value is high. Used only to color the frontend bars (good=green / bad=red).
+GOOD_PREFIXES_OR_NAMES = (
+    "EXT_SOURCE", "SIMAH", "BUREAU_CREDIT_AGE", "YEARS_EMPLOYED", "AGE_YEARS",
+    "INSTAL_PAYMENT_RATE", "BUREAU_CLOSED",
+    "CARD_PAYMENT_RATIO", "CARD_MONTHS_ACTIVE",
+)
+BAD_HINTS = (
+    "OVERDUE", "DPD", "LATE", "UNDERPAYMENT", "DEBT", "UTIL", "AMT_CREDIT",
+    "AMT_ANNUITY", "DBR", "CREDIT_INCOME_RATIO", "PROLONG", "ACTIVE_BUREAU",
+    "DEF_30", "DEF_60", "_INVALID",
+)
+
+# Feature -> translation key in frontend/src/lib/strings.js. The frontend
+# resolves t[description_key] for the description card under each driver bar.
+# Keys not in this map fall back to the feature code in the UI.
+DESCRIPTION_KEY_BY_FEATURE = {
+    "EXT_SOURCE_AVG": "drv_EXT_SOURCE_AVG",
+    "EXT_SOURCE_1": "drv_EXT_SOURCE_1",
+    "EXT_SOURCE_2": "drv_EXT_SOURCE_2",
+    "EXT_SOURCE_3": "drv_EXT_SOURCE_3",
+    "SIMAH_SCORE": "drv_SIMAH_SCORE",
+    "AMT_CREDIT": "drv_AMT_CREDIT",
+    "AMT_ANNUITY": "drv_AMT_ANNUITY",
+    "AMT_INCOME_TOTAL": "drv_AMT_INCOME_TOTAL",
+    "YEARS_EMPLOYED": "drv_YEARS_EMPLOYED",
+    "AGE_YEARS": "drv_AGE_YEARS",
+    "DBR": "drv_DBR",
+    "CREDIT_INCOME_RATIO": "drv_CREDIT_INCOME_RATIO",
+    "INSTAL_PCT_LATE": "drv_INSTAL_PCT_LATE",
+    "INSTAL_DAYS_LATE_MAX": "drv_INSTAL_DAYS_LATE_MAX",
+    "INSTAL_DAYS_LATE_MEAN": "drv_INSTAL_DAYS_LATE_MEAN",
+    "INSTAL_PAYMENT_RATE": "drv_INSTAL_PAYMENT_RATE",
+    "BUREAU_CREDIT_AGE_MAX": "drv_BUREAU_CREDIT_AGE_MAX",
+    "BUREAU_MAX_OVERDUE": "drv_BUREAU_MAX_OVERDUE",
+    "BUREAU_DAYS_OVERDUE_MAX": "drv_BUREAU_DAYS_OVERDUE_MAX",
+    "BUREAU_DEBT_TOTAL": "drv_BUREAU_DEBT_TOTAL",
+    "BUREAU_LIMIT_TOTAL": "drv_BUREAU_LIMIT_TOTAL",
+    "BUREAU_UTIL_RATIO": "drv_BUREAU_UTIL_RATIO",
+    "BUREAU_ACTIVE_COUNT": "drv_BUREAU_ACTIVE_COUNT",
+    "BUREAU_PROLONGED_COUNT": "drv_BUREAU_PROLONGED_COUNT",
+    "CARD_UTIL_RATIO_AVG": "drv_CARD_UTIL_RATIO_AVG",
+    "CARD_UTIL_RATIO_MAX": "drv_CARD_UTIL_RATIO_MAX",
+    "CARD_DPD_MAX": "drv_CARD_DPD_MAX",
+    "CARD_PAYMENT_RATIO": "drv_CARD_PAYMENT_RATIO",
+    "CARD_MONTHS_ACTIVE": "drv_CARD_MONTHS_ACTIVE",
+    "IS_EMPLOYED": "drv_IS_EMPLOYED",
+    "AMT_REQ_CREDIT_BUREAU_MON": "drv_AMT_REQ_CREDIT_BUREAU_MON",
+    "ANNUITY_CREDIT_RATIO": "drv_ANNUITY_CREDIT_RATIO",
+    "GOODS_CREDIT_RATIO": "drv_GOODS_CREDIT_RATIO",
+    "BUREAU_DEBT_CREDIT_RATIO_MAX": "drv_BUREAU_DEBT_CREDIT_RATIO_MAX",
+    "OWN_CAR_AGE": "drv_OWN_CAR_AGE",
+    "CODE_GENDER_M": "drv_CODE_GENDER_M",
+}
+
+
+def _impact_for(name: str) -> str:
+    upper = name.upper()
+    for token in GOOD_PREFIXES_OR_NAMES:
+        if upper.startswith(token) or token in upper:
+            return "good"
+    for token in BAD_HINTS:
+        if token in upper:
+            return "bad"
+    return "neutral"
 
 
 def _xgb_scores(model, feature_cols: list[str]) -> pd.DataFrame:
-    """Return a DataFrame with weight / gain / cover for every feature.
-
-    XGBoost's get_score skips features that were never used as a split, so we
-    reindex to the full feature list and fill missing with 0.
-    """
     booster = model.get_booster()
     out = {}
     for kind in ("weight", "gain", "cover"):
@@ -62,7 +126,6 @@ def _xgb_scores(model, feature_cols: list[str]) -> pd.DataFrame:
 
 
 def _flag_suspicious(table: pd.DataFrame) -> list[str]:
-    """Surface features that look like IDs, target leakage, or pure redundancy."""
     flags: list[str] = []
     for feat in table.index:
         upper = feat.upper()
@@ -71,9 +134,6 @@ def _flag_suspicious(table: pd.DataFrame) -> list[str]:
         if upper == "TARGET":
             flags.append(f"  - {feat}: this IS the label — direct leakage")
 
-    # Engineered features that are exact deterministic transforms of others —
-    # multicollinearity, not leakage. Worth knowing because permutation
-    # importance under-counts each member of a redundant group.
     redundancies = [
         ("SIMAH_SCORE", ["EXT_SOURCE_AVG"], "deterministic affine transform: 300 + 600 * EXT_SOURCE_AVG"),
         ("EXT_SOURCE_AVG", ["EXT_SOURCE_1", "EXT_SOURCE_2", "EXT_SOURCE_3"], "mean of EXT_SOURCE_1..3"),
@@ -98,20 +158,26 @@ def main() -> None:
 
     X = df[feature_cols]
     y = df["TARGET"].astype(int)
-
-    _, X_test, _, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=RANDOM_STATE,
-    )
-    print(f"Test set size: {len(X_test):,}, features: {len(feature_cols)}")
+    print(f"Rows: {len(X):,}  features: {len(feature_cols)}")
 
     # ---- 1. XGBoost weight / gain / cover -------------------------------
     xgb_scores = _xgb_scores(model, feature_cols)
 
     # ---- 2. SHAP values -------------------------------------------------
-    print(f"Computing SHAP values on a {SHAP_SAMPLE}-row sample ...")
+    # Stratified sample so the rare-positive class isn't swamped.
     rng = np.random.default_rng(RANDOM_STATE)
-    sample_idx = rng.choice(len(X_test), size=min(SHAP_SAMPLE, len(X_test)), replace=False)
-    X_shap = X_test.iloc[sample_idx]
+    pos_idx = np.flatnonzero(y.to_numpy() == 1)
+    neg_idx = np.flatnonzero(y.to_numpy() == 0)
+    n_pos = min(SHAP_SAMPLE // 2, len(pos_idx))
+    n_neg = min(SHAP_SAMPLE - n_pos, len(neg_idx))
+    sample_idx = np.concatenate([
+        rng.choice(pos_idx, size=n_pos, replace=False),
+        rng.choice(neg_idx, size=n_neg, replace=False),
+    ])
+    rng.shuffle(sample_idx)
+    X_shap = X.iloc[sample_idx]
+
+    print(f"Computing SHAP values on a {len(X_shap)}-row stratified sample ...")
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X_shap)
     if isinstance(shap_values, list):
@@ -119,46 +185,27 @@ def main() -> None:
     shap_arr = np.asarray(shap_values)
     shap_mean_abs = pd.Series(np.abs(shap_arr).mean(axis=0), index=feature_cols)
 
-    # ---- 3. Permutation importance --------------------------------------
-    print(f"Running permutation importance ({PERM_REPEATS} repeats) ...")
-    perm = permutation_importance(
-        model, X_test, y_test,
-        scoring="roc_auc",
-        n_repeats=PERM_REPEATS,
-        random_state=RANDOM_STATE,
-        n_jobs=-1,
-    )
-    perm_mean = pd.Series(perm.importances_mean, index=feature_cols)
-
-    baseline_auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])
-
     # ---- Combined ranking table -----------------------------------------
     table = pd.DataFrame({
         "weight": xgb_scores["weight"],
         "gain":   xgb_scores["gain"],
         "cover":  xgb_scores["cover"],
         "shap_mean_abs": shap_mean_abs,
-        "perm_drop_auc": perm_mean,
     }).fillna(0.0)
     table["rank_shap"] = table["shap_mean_abs"].rank(ascending=False, method="min").astype(int)
     table["rank_gain"] = table["gain"].rank(ascending=False, method="min").astype(int)
-    table["rank_perm"] = table["perm_drop_auc"].rank(ascending=False, method="min").astype(int)
     table = table.sort_values("shap_mean_abs", ascending=False)
 
-    # ---- Print top-15-by-SHAP table -------------------------------------
-    print(f"\nBaseline test AUC: {baseline_auc:.4f}")
     print("\nTop 15 features ranked by SHAP mean |value|.")
-    print("rk_s/g/p = rank by SHAP / XGBoost gain / permutation drop-AUC.\n")
-    print(f"{'feature':<28}  {'weight':>7}  {'gain':>10}  {'cover':>10}  "
-          f"{'SHAP|.|':>9}  {'perm_dAUC':>10}  {'rk_s/g/p':>10}")
+    print(f"{'feature':<32}  {'weight':>7}  {'gain':>10}  {'cover':>10}  "
+          f"{'SHAP|.|':>9}  {'rk_s/g':>8}")
     for feat, r in table.head(TOP_N).iterrows():
         print(
-            f"{feat:<28}  {int(r['weight']):>7}  {r['gain']:>10.2f}  {r['cover']:>10.2f}  "
-            f"{r['shap_mean_abs']:>9.5f}  {r['perm_drop_auc']:>+10.5f}  "
-            f"{int(r['rank_shap']):>3}/{int(r['rank_gain']):>2}/{int(r['rank_perm']):>2}"
+            f"{feat:<32}  {int(r['weight']):>7}  {r['gain']:>10.2f}  {r['cover']:>10.2f}  "
+            f"{r['shap_mean_abs']:>9.5f}  "
+            f"{int(r['rank_shap']):>3}/{int(r['rank_gain']):>2}"
         )
 
-    # ---- Concentration ---------------------------------------------------
     cum = (table["shap_mean_abs"] / table["shap_mean_abs"].sum()).cumsum()
     n_50 = int((cum.values >= 0.50).argmax() + 1)
     n_80 = int((cum.values >= 0.80).argmax() + 1)
@@ -166,7 +213,6 @@ def main() -> None:
     print(f"\nSHAP concentration: top {n_50} feature(s) carry 50% of mean |SHAP|, "
           f"top {n_80} carry 80%, top {n_95} carry 95%.")
 
-    # ---- Suspicious / redundant features --------------------------------
     flags = _flag_suspicious(table)
     print("\nSanity check — suspicious or redundant features:")
     if not flags:
@@ -175,16 +221,7 @@ def main() -> None:
         for line in flags:
             print(line)
 
-    dead = table[
-        (table["gain"] == 0)
-        & (table["shap_mean_abs"] < 1e-4)
-        & (table["perm_drop_auc"].abs() < 1e-4)
-    ].index.tolist()
-    if dead:
-        print(f"\nFeatures with no measurable contribution ({len(dead)}): {', '.join(dead)}")
-
     # ---- Plots ----------------------------------------------------------
-    # 1) XGBoost weight/gain/cover (top-N each), three panels.
     fig, axes = plt.subplots(1, 3, figsize=(18, 7))
     for ax, kind, color in zip(axes, ("weight", "gain", "cover"),
                                ("#1f77b4", "#2ca02c", "#9467bd")):
@@ -197,7 +234,6 @@ def main() -> None:
     fig.savefig(MODELS_DIR / "importance_xgb.png", dpi=120, bbox_inches="tight")
     plt.close(fig)
 
-    # 2) SHAP beeswarm.
     plt.figure(figsize=(10, 8))
     shap.summary_plot(
         shap_arr, X_shap, feature_names=feature_cols,
@@ -208,7 +244,6 @@ def main() -> None:
     plt.savefig(MODELS_DIR / "importance_shap_beeswarm.png", dpi=120, bbox_inches="tight")
     plt.close("all")
 
-    # 3) SHAP mean |value| bar.
     plt.figure(figsize=(10, 8))
     shap.summary_plot(
         shap_arr, X_shap, feature_names=feature_cols, plot_type="bar",
@@ -219,22 +254,32 @@ def main() -> None:
     plt.savefig(MODELS_DIR / "importance_shap_bar.png", dpi=120, bbox_inches="tight")
     plt.close("all")
 
-    # 4) Permutation drop-AUC.
-    fig, ax = plt.subplots(figsize=(10, 8))
-    s = table["perm_drop_auc"].sort_values(ascending=False).head(TOP_N)
-    err = pd.Series(perm.importances_std, index=feature_cols).reindex(s.index)
-    ax.barh(s.index[::-1], s.values[::-1], xerr=err.values[::-1], color="#d62728")
-    ax.set_title(f"Permutation drop-AUC — top {TOP_N} (baseline AUC {baseline_auc:.4f})")
-    ax.set_xlabel("AUC reduction when feature is shuffled")
-    ax.grid(True, alpha=0.3, axis="x")
-    fig.tight_layout()
-    fig.savefig(MODELS_DIR / "importance_permutation.png", dpi=120, bbox_inches="tight")
-    plt.close(fig)
+    # ---- Frontend export ------------------------------------------------
+    top = table.head(TOP_N_FRONTEND)
+    drivers = [
+        {
+            "feature": feat,
+            "shap_mean_abs": round(float(row["shap_mean_abs"]), 4),
+            "rank_shap": int(row["rank_shap"]),
+            "impact": _impact_for(feat),
+            "description_key": DESCRIPTION_KEY_BY_FEATURE.get(feat),
+        }
+        for feat, row in top.iterrows()
+    ]
+    payload = {
+        "drivers": drivers,
+        "n_features": int(len(feature_cols)),
+        "shap_sample_size": int(len(X_shap)),
+        "concentration": {"top_50_pct": n_50, "top_80_pct": n_80, "top_95_pct": n_95},
+        "source": "SHAP mean |value| on stratified 5000-row sample",
+    }
+    DRIVERS_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     print("\nPlots saved:")
     for name in ("importance_xgb.png", "importance_shap_beeswarm.png",
-                 "importance_shap_bar.png", "importance_permutation.png"):
+                 "importance_shap_bar.png"):
         print(f"  models/{name}")
+    print(f"\nDrivers JSON saved to: {DRIVERS_PATH}")
 
 
 if __name__ == "__main__":

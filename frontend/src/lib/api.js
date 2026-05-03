@@ -27,3 +27,18 @@ export const fetchModelPerformance = async () => {
   const { data } = await client.get('/model-performance')
   return data
 }
+
+export const fetchMetricsSummary = async () => {
+  const { data } = await client.get('/metrics-summary')
+  return data
+}
+
+export const fetchCalibration = async () => {
+  const { data } = await client.get('/calibration')
+  return data
+}
+
+export const fetchFeatureImportance = async () => {
+  const { data } = await client.get('/feature-importance')
+  return data
+}

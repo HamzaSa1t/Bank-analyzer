@@ -27,8 +27,14 @@ cp .env.example .env
 kaggle competitions download -c home-credit-default-risk
 unzip home-credit-default-risk.zip -d data/
 
-# Train model (produces models/xgboost_model.pkl + models/feature_order.json)
-jupyter notebook notebooks/training.ipynb
+# Prepare data and train model
+python src/preprocessing.py
+python src/train.py
+
+# Training produces:
+# - models/model.pkl and models/feature_cols.pkl for the API
+# - models/xgboost_model.pkl and models/feature_order.json as compatibility aliases
+# - models/metrics.json with validation metrics for the saved model
 ```
 
 ## Run

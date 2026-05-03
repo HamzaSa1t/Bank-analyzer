@@ -33,6 +33,11 @@ export const FEATURE_LABELS = {
   CARD_MONTHS_ACTIVE: 'Credit Card Active Months',
   IS_EMPLOYED: 'Employment Status',
   AMT_REQ_CREDIT_BUREAU_MON: 'Credit Inquiries (Last Month)',
+  ANNUITY_CREDIT_RATIO: 'Annuity-to-Loan Ratio',
+  GOODS_CREDIT_RATIO: 'Goods Price-to-Loan Ratio',
+  BUREAU_DEBT_CREDIT_RATIO_MAX: 'Max Bureau Debt-to-Credit Ratio',
+  OWN_CAR_AGE: 'Owned Car Age (Years)',
+  CODE_GENDER_M: 'Gender (Male)',
 }
 
 export const prettyFeature = (name) => FEATURE_LABELS[name] ?? name

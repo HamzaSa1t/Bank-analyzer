@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
+import json
 import math
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sklearn.metrics import f1_score, precision_score, recall_score
-from sklearn.model_selection import train_test_split
 
 from src import data_loader
 
@@ -23,6 +21,9 @@ ROOT = Path(__file__).resolve().parents[1]
 FEATURES_CSV = ROOT / "data" / "processed" / "features.csv"
 MODEL_PATH = ROOT / "models" / "model.pkl"
 FEATURE_COLS_PATH = ROOT / "models" / "feature_cols.pkl"
+METRICS_PATH = ROOT / "models" / "metrics.json"
+CALIBRATION_PATH = ROOT / "models" / "calibration_buckets.json"
+DRIVERS_PATH = ROOT / "models" / "feature_importance.json"
 POLICY_THRESHOLDS = {"conservative": 0.05, "aggressive": 0.15}
 
 app = FastAPI(title="Credit Risk Analyzer", version="1.0.0")
@@ -85,46 +86,88 @@ def assess(req: AssessmentRequest) -> AssessmentResponse:
 @app.get("/model-performance")
 @lru_cache(maxsize=1)
 def computed_model_performance() -> dict[str, dict[str, float]]:
-    """Compute policy metrics on the same held-out split used during training."""
-    if not FEATURES_CSV.exists() or not MODEL_PATH.exists() or not FEATURE_COLS_PATH.exists():
+    """Return policy metrics from the OOF threshold report saved by src/train.py.
+
+    The final model in models/model.pkl is retrained on the FULL dataset, so any
+    re-evaluation here would leak. metrics.json carries the unbiased OOF numbers
+    (5-fold StratifiedKFold) — read those.
+    """
+    if not METRICS_PATH.exists():
         raise HTTPException(
             status_code=503,
-            detail="Model performance artifacts are missing - run `python src/train.py` first.",
+            detail="metrics.json missing - run `python src/train.py` first.",
         )
 
-    df = pd.read_csv(FEATURES_CSV)
-    feature_cols = joblib.load(FEATURE_COLS_PATH)
-    missing = [col for col in feature_cols if col not in df.columns]
-    if missing:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Feature columns missing from {FEATURES_CSV.name}: {missing[:5]}",
-        )
+    metrics = json.loads(METRICS_PATH.read_text(encoding="utf-8"))
+    thresholds = metrics.get("thresholds", {})
 
-    X = df[feature_cols]
-    y = df["TARGET"].astype(int)
-    _, X_test, _, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        stratify=y,
-        random_state=42,
-    )
-
-    model = joblib.load(MODEL_PATH)
-    y_proba = model.predict_proba(X_test)[:, 1]
-
-    def _metrics(threshold: float) -> dict[str, float]:
-        y_pred = (y_proba >= threshold).astype(int)
+    def _pick(key: str) -> dict[str, float]:
+        block = thresholds.get(key)
+        if not block:
+            raise HTTPException(
+                status_code=503,
+                detail=f"metrics.json missing thresholds.{key} - retrain the model.",
+            )
         return {
-            "threshold": threshold,
-            "precision": float(precision_score(y_test, y_pred, zero_division=0)),
-            "recall": float(recall_score(y_test, y_pred, zero_division=0)),
-            "f1": float(f1_score(y_test, y_pred, zero_division=0)),
-            "approval_rate": float((y_proba < threshold).mean()),
+            "threshold": float(block["threshold"]),
+            "precision": float(block["precision"]),
+            "recall": float(block["recall"]),
+            "f1": float(block["f1"]),
+            "approval_rate": float(block["approval_rate"]),
         }
 
     return {
-        "conservative": _metrics(POLICY_THRESHOLDS["conservative"]),
-        "aggressive": _metrics(POLICY_THRESHOLDS["aggressive"]),
+        "conservative": _pick("conservative_0.05"),
+        "aggressive": _pick("aggressive_0.15"),
     }
+
+
+@app.get("/metrics-summary")
+@lru_cache(maxsize=1)
+def metrics_summary() -> dict[str, Any]:
+    """Headline metrics for the model-performance page hero/gauge tiles."""
+    if not METRICS_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="metrics.json missing - run `python src/train.py` first.",
+        )
+    metrics = json.loads(METRICS_PATH.read_text(encoding="utf-8"))
+    cv = metrics.get("cv") or {}
+    return {
+        "oof_auc": float(metrics.get("auc_roc", 0.0)),
+        "brier_score": float(metrics.get("brier_score", 0.0)),
+        "pr_auc": float(metrics.get("pr_auc", 0.0)),
+        "n_total": int(metrics.get("n_total", 0)),
+        "positive_rate": float(metrics.get("positive_rate", 0.0)),
+        "feature_count": int(metrics.get("feature_count", 0)),
+        "validation_method": str(metrics.get("validation_method", "")),
+        "mean_val_auc": float(cv.get("mean_val_auc", 0.0)),
+        "std_val_auc": float(cv.get("std_val_auc", 0.0)),
+        "mean_train_auc": float(cv.get("mean_train_auc", 0.0)),
+        "train_val_gap": float(cv.get("train_val_gap", 0.0)),
+        "n_splits": int(cv.get("n_splits", 0)),
+    }
+
+
+@app.get("/calibration")
+@lru_cache(maxsize=1)
+def calibration_payload() -> dict[str, Any]:
+    """Reliability buckets computed on OOF predictions (calibration_check.py)."""
+    if not CALIBRATION_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="calibration_buckets.json missing - run `python src/calibration_check.py`.",
+        )
+    return json.loads(CALIBRATION_PATH.read_text(encoding="utf-8"))
+
+
+@app.get("/feature-importance")
+@lru_cache(maxsize=1)
+def feature_importance_payload() -> dict[str, Any]:
+    """Top SHAP drivers from the final model (feature_importance.py)."""
+    if not DRIVERS_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="feature_importance.json missing - run `python src/feature_importance.py`.",
+        )
+    return json.loads(DRIVERS_PATH.read_text(encoding="utf-8"))

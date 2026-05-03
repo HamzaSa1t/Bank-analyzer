@@ -20,6 +20,7 @@ BANK_ANNUAL_RATE = {
     "conservative": 0.03,
     "aggressive": 0.11,
 }
+RATIO_CLIP_UPPER = 10.0
 
 # Frontend symbolic value -> Home Credit NAME_INCOME_TYPE string.
 # IS_EMPLOYED = 1 for {"Working", "State servant"} (per preprocessing spec).
@@ -28,6 +29,7 @@ EMPLOYMENT_MAP = {
     "private": "Working",
     "self": "Commercial associate",
 }
+EMPLOYMENT_ONE_HOT_PREFIX = "NAME_INCOME_TYPE_"
 
 _FEATURE_COLS: list[str] | None = None
 
@@ -52,6 +54,15 @@ def _monthly_annuity(principal: float, annual_rate: float, months: int) -> float
     if r == 0:
         return principal / months
     return principal * r / (1.0 - (1.0 + r) ** -months)
+
+
+def _safe_ratio(numerator: float, denominator: float) -> float:
+    if denominator <= 0:
+        return float("nan")
+    value = numerator / denominator
+    if np.isnan(value) or np.isinf(value):
+        return float("nan")
+    return float(max(0.0, min(RATIO_CLIP_UPPER, value)))
 
 
 def compute_derived(existing_obligations: float,
@@ -127,11 +138,15 @@ def build_features(request_dict: dict[str, Any],
 
     name_income_type = EMPLOYMENT_MAP.get(employment_type, "Working")
     merged["IS_EMPLOYED"] = 1 if name_income_type in ("Working", "State servant") else 0
+    for key in list(merged):
+        if key.startswith(EMPLOYMENT_ONE_HOT_PREFIX):
+            merged[key] = 0
+    merged[f"{EMPLOYMENT_ONE_HOT_PREFIX}{name_income_type}"] = 1
 
     # Recompute the per-row engineered features against the overlaid loan terms,
     # so the model sees ratios that reflect THIS application (not the SIMAH sample's).
-    merged["DBR"] = new_annuity / max(gross_salary, 1.0)
-    merged["CREDIT_INCOME_RATIO"] = loan_amount / max(gross_salary, 1.0)
+    merged["DBR"] = _safe_ratio(new_annuity, gross_salary)
+    merged["CREDIT_INCOME_RATIO"] = _safe_ratio(loan_amount, gross_salary)
     ext_clean = [v for v in ext_sources if v is not None and not (isinstance(v, float) and np.isnan(v))]
     merged["EXT_SOURCE_AVG"] = float(np.mean(ext_clean)) if ext_clean else np.nan
     merged["SIMAH_SCORE"] = (
@@ -139,6 +154,13 @@ def build_features(request_dict: dict[str, Any],
         if not (isinstance(merged["EXT_SOURCE_AVG"], float) and np.isnan(merged["EXT_SOURCE_AVG"]))
         else np.nan
     )
+    for col, value in zip(["EXT_SOURCE_1", "EXT_SOURCE_2", "EXT_SOURCE_3"], ext_sources):
+        merged.setdefault(
+            f"{col}_MISSING",
+            int(value is None or (isinstance(value, float) and np.isnan(value))),
+        )
+    for col in ["BUREAU_LIMIT_INVALID", "CARD_LIMIT_INVALID_RATE", "CARD_BALANCE_INVALID_RATE"]:
+        merged.setdefault(col, 0.0)
 
     features: dict[str, Any] = {
         "bank_type": bank_type,
