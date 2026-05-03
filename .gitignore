@@ -3,6 +3,7 @@
 !.env.example
 
 .claude/
+.railway/
 
 __pycache__/
 *.py[cod]
