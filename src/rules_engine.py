@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+# Rule order matters — `check_hard_rules` returns the FIRST failure. Eligibility
+# checks (salary / age / tenor) come before the dbr_limit check so a low-salary
+# applicant whose computed DBR also happens to exceed the cap is reported as
+# `minimum_salary` rather than `dbr_limit`, which is more actionable.
 RULES: list[dict[str, Any]] = [
     {
         "code": "active_default",
@@ -11,13 +15,6 @@ RULES: list[dict[str, Any]] = [
         "check": lambda f: f.get("max_overdue", 0) > 0,
         "ar": "يوجد تعثر ائتماني نشط في سجلك لدى سمة",
         "en": "Active credit default found on SIMAH record",
-    },
-    {
-        "code": "dbr_limit",
-        "feature": "DBR",
-        "check": lambda f: f.get("dbr", 0) > 0.3333,
-        "ar": "نسبة عبء الدين تتجاوز الحد المسموح به 33.33% وفق أنظمة ساما",
-        "en": "Debt Burden Ratio exceeds SAMA mandatory limit of 33.33%",
     },
     {
         "code": "minimum_salary",
@@ -39,6 +36,13 @@ RULES: list[dict[str, Any]] = [
         "check": lambda f: f.get("age", 0) + f.get("loan_months", 0) / 12 > 60,
         "ar": "سيتجاوز عمرك 60 سنة عند انتهاء مدة القرض",
         "en": "Age at loan maturity exceeds maximum of 60 years",
+    },
+    {
+        "code": "dbr_limit",
+        "feature": "DBR",
+        "check": lambda f: f.get("dbr", 0) > 0.3333,
+        "ar": "نسبة عبء الدين تتجاوز الحد المسموح به 33.33% وفق أنظمة ساما",
+        "en": "Debt Burden Ratio exceeds SAMA mandatory limit of 33.33%",
     },
 ]
 

@@ -531,41 +531,6 @@ function DriversBar({ t }) {
   )
 }
 
-// ---------- Section 5: Fairness & limitations ---------------------------
-
-function FairnessBlock({ t }) {
-  const cards = [
-    { tone: 'warn', icon: <IconWarn />, title: t.mpFairAgeTitle, body: t.mpFairAgeBody },
-    { tone: 'info', icon: <IconInfo />, title: t.mpFairBureauTitle, body: t.mpFairBureauBody },
-  ]
-  return (
-    <div className="space-y-8">
-      <SectionHeader eyebrow={t.mpFairnessEyebrow} title={t.mpFairnessTitle} />
-      <motion.div
-        variants={{ show: { transition: { staggerChildren: 0.1 } } }}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: '-80px' }}
-        className="grid gap-5 md:grid-cols-3"
-      >
-        {cards.map((c, i) => (
-          <motion.div key={i} variants={fadeUp} className="card card-hover p-6 space-y-3">
-            <div className={`grid h-10 w-10 place-items-center rounded-xl border ${
-              c.tone === 'warn' ? 'border-amber-400/30 bg-amber-500/10 text-amber-300'
-              : c.tone === 'info' ? 'border-electric-400/30 bg-electric-500/10 text-electric-400'
-              : 'border-growth-500/30 bg-growth-500/10 text-growth-300'
-            }`}>
-              {c.icon}
-            </div>
-            <h4 className="text-base font-semibold text-white/90">{c.title}</h4>
-            <p className="text-sm leading-relaxed text-white/60">{c.body}</p>
-          </motion.div>
-        ))}
-      </motion.div>
-    </div>
-  )
-}
-
 // ---------- Icons (inline SVG, currentColor) ----------------------------
 
 function IconForm() {
@@ -605,21 +570,6 @@ function IconGavel() {
     </svg>
   )
 }
-function IconWarn() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3l10 18H2L12 3zM12 10v5M12 18.5h.01" />
-    </svg>
-  )
-}
-function IconInfo() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 8v.01M11 12h1v5h1" />
-    </svg>
-  )
-}
 // ---------- Page --------------------------------------------------------
 
 export default function ModelPerformance({ t }) {
@@ -646,7 +596,6 @@ export default function ModelPerformance({ t }) {
       </div>
 
       <DriversBar t={t} />
-      <FairnessBlock t={t} />
     </section>
   )
 }

@@ -1,13 +1,28 @@
 import { motion } from 'framer-motion'
 import { humanizeFeatureText } from '../lib/featureLabels.js'
 
-export default function LLMReport({ decision, reason, recommendation, t, hardRuleRejection }) {
+export default function LLMReport({
+  decision,
+  riskSummary,
+  keyStrengths,
+  keyConcerns,
+  decisionExplanation,
+  suggestedActions,
+  hardRuleRejection,
+  t,
+}) {
   const approved = decision === 'APPROVED'
   const banner = approved
     ? 'bg-gradient-to-r from-growth-600/30 via-growth-500/20 to-transparent border-growth-500/40 text-growth-300'
     : 'bg-gradient-to-r from-red-700/30 via-red-500/20 to-transparent border-red-500/40 text-red-300'
   const dot = approved ? 'bg-growth-400' : 'bg-red-400'
   const label = approved ? t.decisionApproved : t.decisionRejected
+
+  const summary = hardRuleRejection || riskSummary || '-'
+  const explanation = hardRuleRejection || decisionExplanation || '-'
+  const strengths = Array.isArray(keyStrengths) ? keyStrengths : []
+  const concerns = Array.isArray(keyConcerns) ? keyConcerns : []
+  const actions = Array.isArray(suggestedActions) ? suggestedActions : []
 
   return (
     <motion.div
@@ -21,19 +36,41 @@ export default function LLMReport({ decision, reason, recommendation, t, hardRul
         <span className="text-lg font-bold tracking-wide">{label}</span>
       </div>
 
-      <div className="grid gap-6 p-6 md:grid-cols-2">
-        <Section title={t.reason} body={humanizeFeatureText(hardRuleRejection || reason || '-', t)} />
-        <Section title={t.recommendation} body={humanizeFeatureText(recommendation || '-', t)} />
+      <div className="space-y-6 p-6">
+        <Paragraph title={t.riskSummary} body={humanizeFeatureText(summary, t)} />
+        <BulletList title={t.keyStrengths} items={strengths} t={t} tone="good" />
+        <BulletList title={t.keyConcerns} items={concerns} t={t} tone="bad" />
+        <Paragraph title={t.decisionExplanation} body={humanizeFeatureText(explanation, t)} />
+        <BulletList title={t.suggestedActions} items={actions} t={t} tone="neutral" />
       </div>
     </motion.div>
   )
 }
 
-function Section({ title, body }) {
+function Paragraph({ title, body }) {
   return (
     <div className="space-y-2">
       <h4 className="label-muted">{title}</h4>
       <p className="text-sm leading-relaxed text-white/80 whitespace-pre-line">{body}</p>
+    </div>
+  )
+}
+
+function BulletList({ title, items, t, tone }) {
+  if (!items || items.length === 0) return null
+  const dotColor =
+    tone === 'good' ? 'bg-growth-400' : tone === 'bad' ? 'bg-red-400' : 'bg-electric-400'
+  return (
+    <div className="space-y-2">
+      <h4 className="label-muted">{title}</h4>
+      <ul className="space-y-2">
+        {items.map((item, idx) => (
+          <li key={idx} className="flex items-start gap-3 text-sm leading-relaxed text-white/80">
+            <span className={`mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full ${dotColor}`} />
+            <span>{humanizeFeatureText(String(item), t)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

@@ -28,14 +28,43 @@ class AssessmentRequest(BaseModel):
 
 
 class AssessmentResponse(BaseModel):
+    # Decision + hard rules
     passed_hard_rules: bool
     hard_rule_rejection: Optional[str] = None
-    pd_prob: float
-    credit_score: int
     decision: str
     risk_level: str
+    failed_rules: list[str] = []
+
+    # Probability of default
+    pd_prob: float
+    model_pd: float
+    credit_score: int
+
+    # DBR — `dbr` is the pre-pricing value used by the SAMA hard-rules engine
+    # (computed at the midpoint rate). `final_dbr` is recomputed at the priced
+    # rate and is the value compared against the SAMA cap inside the gate logic.
     dbr: float
+    final_dbr: float
+
+    # Pricing + unit economics
+    offered_interest_rate: float
+    final_monthly_payment: float
+    expected_revenue: float
+    expected_loss: float
+    expected_profit: float
+
+    # Display-only references for the Decision Logic UI card.
+    max_pd_allowed: float
+    pd_threshold: float
+    min_score: int
+
+    # SHAP
     shap_top5: list[dict[str, Any]]
     shap_plot_b64: str
-    llm_reason: str
-    llm_recommendation: str
+
+    # Structured LLM narrative (replaces llm_reason / llm_recommendation).
+    risk_summary: str
+    key_strengths: list[str]
+    key_concerns: list[str]
+    decision_explanation: str
+    suggested_actions: list[str]
