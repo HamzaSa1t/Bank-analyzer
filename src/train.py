@@ -26,10 +26,51 @@ Saves to models/:
     categorical_columns.json
     metrics.json       — OOF AUC + fold AUCs + train–val gap + thresholds
 
-Reports OOF AUC + recall at the default 0.5 cutoff, plus metrics at the two
-bank-policy thresholds (computed on OOF predictions for an unbiased view):
+Reports OOF AUC plus metrics at the two bank-policy thresholds (computed on
+OOF predictions for an unbiased view):
     Conservative bank: PD > 0.05  -> reject
     Aggressive  bank: PD > 0.15  -> reject
+
+MODEL PERFORMANCE OUTPUT
+
+Metric summary:
+| Metric | Result |
+|---|---:|
+| ROC-AUC / OOF AUC | 0.7868 |
+| Mean validation AUC | 0.7868 |
+| Validation AUC std | 0.0035 |
+| Mean train AUC | 0.8334 |
+| Train-validation gap | 0.0466 |
+| PR-AUC | 0.2812 |
+| Brier score | 0.0659 |
+
+Dataset / training:
+| Metric | Result |
+|---|---:|
+| Mean best iteration | 1300 |
+| Total rows | 307,511 |
+| Positive rate | 0.0807 |
+| Feature count | 289 |
+
+Per-fold results:
+| Fold | Validation AUC | Train AUC | Best Iteration |
+|---:|---:|---:|---:|
+| 1 | 0.7822 | 0.8265 | 1022 |
+| 2 | 0.7916 | 0.8306 | 1270 |
+| 3 | 0.7859 | 0.8366 | 1405 |
+| 4 | 0.7900 | 0.8445 | 1702 |
+| 5 | 0.7842 | 0.8287 | 1100 |
+
+Threshold results:
+| Threshold | Precision | Recall | F1 | Approval Rate | Confusion Matrix |
+|---|---:|---:|---:|---:|---|
+| Conservative 0.05 | 0.1415 | 0.8441 | 0.2423 | 0.5183 | TN=155511, FP=127175, FN=3869, TP=20956 |
+| Aggressive 0.15 | 0.2618 | 0.4744 | 0.3374 | 0.8537 | TN=249481, FP=33205, FN=13049, TP=11776 |
+
+Notes:
+- Default threshold 0.5 is intentionally omitted because it is not meaningful for this imbalanced credit-risk use case.
+- The model is used for risk ranking / PD estimation.
+- Final loan decisions are made by the bank simulation using risk, pricing, profitability, and policy gates.
 """
 
 from __future__ import annotations
@@ -94,6 +135,8 @@ def _make_final_model(n_estimators: int) -> XGBClassifier:
 
 
 def threshold_report(y_true, y_proba, t: float, label: str) -> dict[str, object]:
+    # Threshold metrics are reported on OOF probabilities so policy comparisons
+    # reflect unseen-applicant behavior rather than in-sample fit quality.
     y_pred = (y_proba >= t).astype(int)
     cm = confusion_matrix(y_true, y_pred)
     print(f"\n{label} (PD >= {t}):")
@@ -244,10 +287,8 @@ def main() -> None:
     brier = float(brier_score_loss(y, oof))
     print(f"\nOOF PR-AUC        : {pr_auc:.4f}")
     print(f"OOF Brier score   : {brier:.4f}")
-    print(f"OOF Recall @ 0.5  : {recall_score(y, (oof >= 0.5).astype(int)):.4f}")
 
     thresholds = {
-        "default_0.5": threshold_report(y, oof, 0.5, "Default"),
         "conservative_0.05": threshold_report(
             y, oof, POLICY_THRESHOLDS["conservative"], "Conservative bank"
         ),

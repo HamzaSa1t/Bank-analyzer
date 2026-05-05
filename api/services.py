@@ -289,10 +289,14 @@ def run_assessment(req: AssessmentRequest) -> AssessmentResponse:
     simah_raw = req.simah_profile.get("raw_features", {}) or {}
     features = feature_engineering.build_features(req.model_dump(), simah_raw)
 
+    # Hard rules short-circuit before ML so non-negotiable policy failures do
+    # not receive fabricated PD, pricing, or profit values.
     rules = rules_engine.check_hard_rules(features, req.bank_type, req.language)
     if not rules["passed"]:
         return _hard_rule_response(req, rules, features)
 
+    # The post-rule path deliberately separates responsibilities: model scores
+    # risk, SHAP explains inputs, and reporter turns verified gate facts into text.
     ml = ml_inference.predict(features, req.bank_type)
     shap = ml_explainer.explain(features)
     llm = llm_reporter.generate(ml, shap, features, req.bank_type, req.language)

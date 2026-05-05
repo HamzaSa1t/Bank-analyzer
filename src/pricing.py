@@ -17,6 +17,8 @@ def get_interest_rate(pd: float, bank_type: str) -> float:
     """Annualized rate offered to the applicant. Higher PD → higher premium."""
     if bank_type == "conservative":
         base = 0.03
+        # Conservative pricing keeps spreads narrow, so high-PD applicants are
+        # more likely to fail the profitability/PD gates than be repriced upward.
         if pd < 0.03:
             premium = 0.01
         elif pd < 0.06:
@@ -27,6 +29,8 @@ def get_interest_rate(pd: float, bank_type: str) -> float:
 
     if bank_type == "aggressive":
         base = 0.05
+        # Aggressive pricing accepts more risk only when the premium can pay for
+        # expected loss and still leave positive unit economics.
         if pd < 0.05:
             premium = 0.03
         elif pd < 0.10:
@@ -49,6 +53,8 @@ def compute_financials(
     lgd: float = 0.45,
 ) -> dict[str, float]:
     """Amortized payment + revenue/expected-loss/profit at origination."""
+    # Profit is intentionally simple and transparent: interest revenue minus
+    # expected credit loss at origination, not a full lifetime balance-sheet model.
     monthly_rate = annual_rate / 12.0
     growth = (1.0 + monthly_rate) ** loan_months
     monthly_payment = loan_amount * (monthly_rate * growth) / (growth - 1.0)

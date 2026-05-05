@@ -14,6 +14,8 @@ import {
 import { prettyFeature } from '../lib/featureLabels.js'
 import AnimatedStockChart from './AnimatedStockChart.jsx'
 
+const MODEL_TRAINING_GITHUB_URL = 'https://github.com/HamzaSa1t/Bank-analyzer/blob/main/src/train.py'
+
 // Headline numbers used as fallback when /metrics-summary is unreachable.
 // Sourced from the last successful CV run.
 const SUMMARY_FALLBACK = {
@@ -55,15 +57,15 @@ function SectionHeader({ eyebrow, title, sub }) {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: '-80px' }}
-      className="relative z-10 max-w-3xl"
+      className="relative z-10 max-w-3xl break-words"
     >
       {eyebrow && <span className="label-muted">{eyebrow}</span>}
-      <h3 className="mt-3 text-3xl font-bold leading-[1.25] sm:text-4xl">
+      <h3 className="mt-3 text-2xl font-bold leading-[1.25] sm:text-4xl">
         <span className="inline-block bg-gradient-to-r from-white to-electric-400 bg-clip-text py-1 text-transparent">
           {title}
         </span>
       </h3>
-      {sub && <p className="mt-3 text-white/60">{sub}</p>}
+      {sub && <p className="mt-3 break-words text-white/60">{sub}</p>}
     </motion.div>
   )
 }
@@ -100,12 +102,24 @@ function HeroBlock({ t }) {
         title={t.mpHeroTitle}
         sub={t.mpHeroSub}
       />
+      <motion.a
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: '-80px' }}
+        href={MODEL_TRAINING_GITHUB_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex rounded-lg border border-electric-400/30 bg-electric-500/10 px-3 py-2 text-sm font-semibold text-electric-300 transition hover:border-electric-300/60 hover:bg-electric-500/15"
+      >
+        {t.mpModelDetailsLink}
+      </motion.a>
       <motion.div
         variants={{ show: { transition: { staggerChildren: 0.12 } } }}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-80px' }}
-        className="grid gap-5 md:grid-cols-3"
+        className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
       >
         <Stat
           label={t.mpStatAuc}
@@ -135,14 +149,14 @@ function Stat({ label, value, desc, extra, accent }) {
   const text = accent === 'growth' ? 'text-growth-300' : 'text-electric-400'
   const blob = accent === 'growth' ? 'bg-growth-500' : 'bg-electric-500'
   return (
-    <motion.div variants={fadeUp} className="card card-hover group relative overflow-hidden p-7">
+    <motion.div variants={fadeUp} className="card card-hover group relative overflow-hidden p-5 sm:p-7">
       <div className={`absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl opacity-25 transition group-hover:opacity-40 ${blob}`} />
       <div className="relative">
-        <div className={`text-4xl font-extrabold tracking-tight ${text}`}>{value}</div>
-        <p className="mt-3 text-sm text-white/70">{label}</p>
-        {desc && <p className="mt-2 text-xs leading-relaxed text-white/55">{desc}</p>}
+        <div className={`break-words text-3xl font-extrabold tracking-tight sm:text-4xl ${text}`}>{value}</div>
+        <p className="mt-3 break-words text-sm text-white/70">{label}</p>
+        {desc && <p className="mt-2 break-words text-xs leading-relaxed text-white/55">{desc}</p>}
         {extra && (
-          <p className="mt-3 border-t border-white/10 pt-3 text-[11px] leading-relaxed text-white/45">
+          <p className="mt-3 break-words border-t border-white/10 pt-3 text-[11px] leading-relaxed text-white/45">
             {extra}
           </p>
         )}
@@ -164,18 +178,18 @@ function SystemOverviewBlock({ t }) {
         whileInView="show"
         viewport={{ once: true, margin: '-80px' }}
       >
-        <div className="card relative overflow-hidden p-6">
+        <div className="card relative overflow-hidden p-5 sm:p-6">
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-20" />
-          <div className="relative space-y-4 text-sm leading-relaxed text-white/75">
+          <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
             <p className="text-white/90">{t.mpSystemBody1}</p>
             <p>{t.mpSystemBody2}</p>
             <div>
               <p>{t.mpSystemBody3}</p>
               <ul className="mt-2 space-y-1.5">
                 {bullets.map((b, i) => (
-                  <li key={i} className="flex items-start gap-2">
+                  <li key={i} className="flex min-w-0 items-start gap-2">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-growth-400" />
-                    <span>{b}</span>
+                    <span className="min-w-0 break-words">{b}</span>
                   </li>
                 ))}
               </ul>
@@ -204,16 +218,16 @@ function RealisticBlock({ t }) {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-80px' }}
-        className="card relative overflow-hidden p-6"
+        className="card relative overflow-hidden p-5 sm:p-6"
       >
         <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-growth-500 blur-3xl opacity-15" />
-        <div className="relative space-y-4 text-sm leading-relaxed text-white/75">
+        <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
           <p className="text-white/90">{t.mpRealisticIntro}</p>
           <ul className="grid gap-2 sm:grid-cols-2">
             {bullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
+              <li key={i} className="flex min-w-0 items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-growth-400" />
-                <span>{b}</span>
+                <span className="min-w-0 break-words">{b}</span>
               </li>
             ))}
           </ul>
@@ -249,25 +263,25 @@ function FlowBlock({ t }) {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-80px' }}
-        className="grid gap-4 lg:grid-cols-5"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
       >
         {steps.map((s, i) => (
-          <motion.li key={i} variants={fadeUp} className="card p-5 relative">
-            <div className="flex items-start gap-3 lg:flex-col lg:items-start">
+          <motion.li key={i} variants={fadeUp} className="card relative p-5">
+            <div className="flex min-w-0 items-start gap-3 lg:flex-col lg:items-start">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-electric-500/30 to-growth-500/30 border border-white/10 text-white">
                 {s.icon}
               </div>
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <span className="label-muted">{`${t.mpStep} ${i + 1}`}</span>
-                <h5 className="mt-1 text-sm font-semibold text-white/95">{s.title}</h5>
-                <p className="mt-1.5 text-xs leading-relaxed text-white/65">{s.body}</p>
+                <h5 className="mt-1 break-words text-sm font-semibold text-white/95">{s.title}</h5>
+                <p className="mt-1.5 break-words text-xs leading-relaxed text-white/65">{s.body}</p>
                 {s.extras && (
                   <>
                     <ul className="mt-2 space-y-1 text-[11px] leading-relaxed text-white/70">
                       {s.extras.gates.map((g, gi) => (
-                        <li key={gi} className="flex items-start gap-1.5">
+                        <li key={gi} className="flex min-w-0 items-start gap-1.5">
                           <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-electric-400" />
-                          <span>{g}</span>
+                          <span className="min-w-0 break-words">{g}</span>
                         </li>
                       ))}
                     </ul>
@@ -304,15 +318,15 @@ function DecisionLogicBlock({ t }) {
         viewport={{ once: true, margin: '-80px' }}
         className="grid gap-5 lg:grid-cols-5"
       >
-        <motion.div variants={fadeUp} className="card relative overflow-hidden p-6 lg:col-span-3">
+        <motion.div variants={fadeUp} className="card relative overflow-hidden p-5 sm:p-6 lg:col-span-3">
           <div className="absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-20" />
-          <div className="relative space-y-4 text-sm leading-relaxed text-white/75">
+          <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
             <p className="text-white/90">{t.mpDecisionsBody}</p>
             <ul className="space-y-1.5">
               {bullets.map((b, i) => (
-                <li key={i} className="flex items-start gap-2">
+                <li key={i} className="flex min-w-0 items-start gap-2">
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-electric-400" />
-                  <span>{b}</span>
+                  <span className="min-w-0 break-words">{b}</span>
                 </li>
               ))}
             </ul>
@@ -320,24 +334,24 @@ function DecisionLogicBlock({ t }) {
         </motion.div>
         <motion.div
           variants={fadeUp}
-          className="card relative overflow-hidden border border-amber-400/30 p-6 lg:col-span-2"
+          className="card relative overflow-hidden border border-amber-400/30 p-5 sm:p-6 lg:col-span-2"
         >
           <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-amber-500 blur-3xl opacity-15" />
           <div className="relative space-y-3">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <span className="grid h-7 w-7 place-items-center rounded-lg border border-amber-400/40 bg-amber-500/10 text-amber-300">
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
                 </svg>
               </span>
-              <h5 className="text-sm font-semibold text-amber-200">{t.mpInsightTitle}</h5>
+              <h5 className="min-w-0 break-words text-sm font-semibold text-amber-200">{t.mpInsightTitle}</h5>
             </div>
-            <p className="text-xs leading-relaxed text-white/75">{t.mpInsightBody}</p>
+            <p className="break-words text-xs leading-relaxed text-white/75">{t.mpInsightBody}</p>
             <ul className="space-y-1.5 text-xs leading-relaxed text-white/70">
               {insightBullets.map((b, i) => (
-                <li key={i} className="flex items-start gap-2">
+                <li key={i} className="flex min-w-0 items-start gap-2">
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
-                  <span>{b}</span>
+                  <span className="min-w-0 break-words">{b}</span>
                 </li>
               ))}
             </ul>
@@ -359,13 +373,13 @@ function ExampleBlock({ t }) {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-80px' }}
-        className="card relative overflow-hidden p-6"
+        className="card relative overflow-hidden p-5 sm:p-6"
       >
         <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-15" />
         <div className="relative space-y-5">
-          <p className="text-sm leading-relaxed text-white/80">{t.mpExampleIntro}</p>
+          <p className="break-words text-sm leading-relaxed text-white/80">{t.mpExampleIntro}</p>
 
-          <div className="grid items-stretch gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr]">
+          <div className="grid items-stretch gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-center">
               <span className="label-muted">{t.mpExampleApplicant}</span>
               <div className="mt-2 inline-grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/[0.04] text-white/70">
@@ -381,25 +395,25 @@ function ExampleBlock({ t }) {
               </svg>
             </div>
             <div className="rounded-xl border border-electric-400/30 bg-electric-500/[0.06] p-4">
-              <div className="flex items-center justify-between gap-2">
-                <h5 className="text-sm font-semibold text-electric-400">{t.mpExampleConservativeLabel}</h5>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h5 className="min-w-0 break-words text-sm font-semibold text-electric-400">{t.mpExampleConservativeLabel}</h5>
                 <span className="rounded-full border border-red-400/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-300">
                   {t.mpExampleConservativeOutcome}
                 </span>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-white/70">{t.mpExampleBullet1}</p>
+              <p className="mt-2 break-words text-xs leading-relaxed text-white/70">{t.mpExampleBullet1}</p>
             </div>
             <div className="hidden items-center justify-center text-white/30 md:flex">
               <span className="text-2xl font-light">·</span>
             </div>
             <div className="rounded-xl border border-growth-500/30 bg-growth-500/[0.06] p-4">
-              <div className="flex items-center justify-between gap-2">
-                <h5 className="text-sm font-semibold text-growth-300">{t.mpExampleAggressiveLabel}</h5>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h5 className="min-w-0 break-words text-sm font-semibold text-growth-300">{t.mpExampleAggressiveLabel}</h5>
                 <span className="rounded-full border border-growth-400/40 bg-growth-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-growth-300">
                   {t.mpExampleAggressiveOutcome}
                 </span>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-white/70">{t.mpExampleBullet2}</p>
+              <p className="mt-2 break-words text-xs leading-relaxed text-white/70">{t.mpExampleBullet2}</p>
             </div>
           </div>
         </div>
@@ -426,17 +440,17 @@ function WhyAloneBlock({ t }) {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-80px' }}
-        className="card relative overflow-hidden p-6"
+        className="card relative overflow-hidden p-5 sm:p-6"
       >
         <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-15" />
-        <div className="relative space-y-4 text-sm leading-relaxed text-white/75">
+        <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
           <p className="text-white/90">{t.mpAloneIntro}</p>
           <p className="text-white/70">{t.mpAloneSub}</p>
           <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {bullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
+              <li key={i} className="flex min-w-0 items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-electric-400" />
-                <span>{b}</span>
+                <span className="min-w-0 break-words">{b}</span>
               </li>
             ))}
           </ul>
@@ -498,8 +512,8 @@ function PolicyMetricsBlock({ t }) {
       className="space-y-4"
     >
       <div className="flex flex-col gap-1">
-        <h4 className="text-sm font-semibold text-white/80">{t.mpPolicyTitle}</h4>
-        <p className="text-xs leading-relaxed text-white/55">{t.mpPolicyHint}</p>
+        <h4 className="break-words text-sm font-semibold text-white/80">{t.mpPolicyTitle}</h4>
+        <p className="break-words text-xs leading-relaxed text-white/55">{t.mpPolicyHint}</p>
       </div>
 
       <motion.div
@@ -508,8 +522,8 @@ function PolicyMetricsBlock({ t }) {
       >
         <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-electric-500 blur-3xl opacity-15" />
         <div className="relative space-y-2">
-          <h5 className="text-sm font-semibold text-electric-300">{t.mpMetricContextTitle}</h5>
-          <p className="text-xs leading-relaxed text-white/70">{t.mpMetricContextBody}</p>
+          <h5 className="break-words text-sm font-semibold text-electric-300">{t.mpMetricContextTitle}</h5>
+          <p className="break-words text-xs leading-relaxed text-white/70">{t.mpMetricContextBody}</p>
         </div>
       </motion.div>
 
@@ -519,7 +533,7 @@ function PolicyMetricsBlock({ t }) {
 
       {!error && (
         <>
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-5 lg:grid-cols-2">
             {cards.map((c) => (
               <PolicyCard
                 key={c.key}
@@ -542,15 +556,15 @@ function PolicyMetricsBlock({ t }) {
             className="card relative overflow-hidden border border-amber-400/30 p-5"
           >
             <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-amber-500 blur-3xl opacity-15" />
-            <div className="relative flex items-start gap-3">
+            <div className="relative flex min-w-0 items-start gap-3">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-amber-400/40 bg-amber-500/10 text-amber-300">
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
                 </svg>
               </span>
-              <div>
-                <h5 className="text-sm font-semibold text-amber-200">{t.mpMetricInsightTitle}</h5>
-                <p className="mt-1 text-xs leading-relaxed text-white/75">{t.mpMetricInsightBody}</p>
+              <div className="min-w-0">
+                <h5 className="break-words text-sm font-semibold text-amber-200">{t.mpMetricInsightTitle}</h5>
+                <p className="mt-1 break-words text-xs leading-relaxed text-white/75">{t.mpMetricInsightBody}</p>
               </div>
             </div>
           </motion.div>
@@ -576,43 +590,43 @@ function PolicyCard({ t, title, tone, values, strategyHeading, strategyBullets, 
   return (
     <motion.div
       variants={fadeUp}
-      className={`card card-hover group relative overflow-hidden border ${styles.ring} p-6`}
+      className={`card card-hover group relative overflow-hidden border ${styles.ring} p-5 sm:p-6`}
     >
       <div className={`absolute -right-16 -top-16 h-48 w-48 rounded-full blur-3xl opacity-20 transition group-hover:opacity-35 ${styles.blob}`} />
       <div className="relative space-y-5">
-        <div className="flex items-center justify-between gap-3">
-          <h5 className={`text-base font-semibold ${styles.text}`}>{title}</h5>
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <h5 className={`min-w-0 break-words text-base font-semibold ${styles.text}`}>{title}</h5>
         </div>
 
         {strategyHeading && strategyBullets?.length > 0 && (
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
-            <p className="text-xs font-semibold text-white/85">{strategyHeading}</p>
+            <p className="break-words text-xs font-semibold text-white/85">{strategyHeading}</p>
             <ul className="mt-2 space-y-1 text-[11px] leading-relaxed text-white/65">
               {strategyBullets.map((b, i) => (
-                <li key={i} className="flex items-start gap-2">
+                <li key={i} className="flex min-w-0 items-start gap-2">
                   <span className={`mt-1.5 h-1 w-1 shrink-0 rounded-full ${styles.blob}`} />
-                  <span>{b}</span>
+                  <span className="min-w-0 break-words">{b}</span>
                 </li>
               ))}
             </ul>
             {strategyInterp && (
-              <p className="mt-3 border-t border-white/10 pt-3 text-[11px] leading-relaxed text-white/70">
+              <p className="mt-3 break-words border-t border-white/10 pt-3 text-[11px] leading-relaxed text-white/70">
                 {strategyInterp}
               </p>
             )}
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {metrics.map((m) => (
-            <div key={m.key} className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-1">
-              <div className={`text-2xl font-extrabold tracking-tight ${styles.text}`}>
+            <div key={m.key} className="min-w-0 space-y-1 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <div className={`break-words text-2xl font-extrabold tracking-tight ${styles.text}`}>
                 {m.value == null
                   ? <span className="text-white/30">—</span>
                   : `${(m.value * 100).toFixed(1)}%`}
               </div>
-              <p className="text-xs font-semibold text-white/85">{m.label}</p>
-              <p className="text-[11px] leading-relaxed text-white/55">{m.desc}</p>
+              <p className="break-words text-xs font-semibold text-white/85">{m.label}</p>
+              <p className="break-words text-[11px] leading-relaxed text-white/55">{m.desc}</p>
             </div>
           ))}
         </div>
@@ -637,9 +651,9 @@ function AucGauge({ t }) {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: '-80px' }}
-      className="card p-6 space-y-4"
+      className="card space-y-4 p-5 sm:p-6"
     >
-      <h4 className="text-sm font-semibold text-white/80">{t.mpAucTitle}</h4>
+      <h4 className="break-words text-sm font-semibold text-white/80">{t.mpAucTitle}</h4>
       <div className="relative h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <RadialBarChart innerRadius="78%" outerRadius="100%" data={data} startAngle={210} endAngle={-30}>
@@ -649,12 +663,12 @@ function AucGauge({ t }) {
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="label-muted">AUC-ROC</span>
-          <span className="mt-1 text-4xl font-extrabold tracking-tight text-growth-300">{auc.toFixed(3)}</span>
+          <span className="mt-1 text-3xl font-extrabold tracking-tight text-growth-300 sm:text-4xl">{auc.toFixed(3)}</span>
           <span className="text-[10px] text-white/40">/ 1.000</span>
         </div>
       </div>
-      <p className="text-center text-sm font-semibold text-growth-300">{t.mpAucLabel}</p>
-      <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
+      <p className="break-words text-center text-sm font-semibold text-growth-300">{t.mpAucLabel}</p>
+      <div className="grid grid-cols-1 gap-2 text-center text-[11px] sm:grid-cols-3">
         <Scale label={t.mpAucScaleRandom} value="0.50" tone="muted" />
         <Scale label={t.mpAucScaleGood} value="0.70" tone="electric" />
         <Scale label={t.mpAucScaleExcellent} value="0.80" tone="growth" />
@@ -669,9 +683,9 @@ function Scale({ label, value, tone }) {
     : tone === 'electric' ? 'text-electric-400 border-electric-400/30'
     : 'text-white/60 border-white/10'
   return (
-    <div className={`rounded-lg border bg-white/[0.02] py-2 ${cls}`}>
+    <div className={`min-w-0 rounded-lg border bg-white/[0.02] px-2 py-2 ${cls}`}>
       <div className="font-mono font-semibold">{value}</div>
-      <div className="mt-1 text-[9px] uppercase tracking-wider text-white/50">{label}</div>
+      <div className="mt-1 break-words text-[9px] uppercase tracking-wider text-white/50">{label}</div>
     </div>
   )
 }
@@ -704,10 +718,11 @@ function ThresholdsBar({ t }) {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: '-80px' }}
-      className="card p-6 space-y-4"
+      className="card space-y-4 p-5 sm:p-6"
     >
-      <h4 className="text-sm font-semibold text-white/80">{t.mpThresholdsTitle}</h4>
-      <div className="h-56 w-full">
+      <h4 className="break-words text-sm font-semibold text-white/80">{t.mpThresholdsTitle}</h4>
+      <div className="overflow-x-auto pb-1">
+        <div className="h-56 min-w-[320px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
@@ -719,8 +734,9 @@ function ThresholdsBar({ t }) {
             <Bar dataKey="recall" name={t.mpRecall} fill="#34e89f" radius={[6, 6, 0, 0]} animationDuration={1200} />
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </div>
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs leading-relaxed text-white/70">
+      <div className="break-words rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs leading-relaxed text-white/70">
         <span className="font-semibold text-white/90">{t.mpRecallLabel}: </span>
         {t.mpRecallExplain}
       </div>
@@ -757,10 +773,11 @@ function CalibrationLine({ t }) {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: '-80px' }}
-      className="card p-6 space-y-4"
+      className="card space-y-4 p-5 sm:p-6"
     >
-      <h4 className="text-sm font-semibold text-white/80">{t.mpCalibTitle}</h4>
-      <div className="h-64 w-full">
+      <h4 className="break-words text-sm font-semibold text-white/80">{t.mpCalibTitle}</h4>
+      <div className="overflow-x-auto pb-1">
+        <div className="h-64 min-w-[420px]">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={buckets} margin={{ top: 5, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
@@ -772,8 +789,9 @@ function CalibrationLine({ t }) {
             <Line type="monotone" dataKey="actual" name={t.mpCalibModel} stroke="#3b82ff" strokeWidth={3} dot={{ r: 4, fill: '#3b82ff' }} animationDuration={1400} />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </div>
-      <p className="text-xs text-white/60">{t.mpCalibHint}</p>
+      <p className="break-words text-xs text-white/60">{t.mpCalibHint}</p>
     </motion.div>
   )
 }
@@ -825,13 +843,13 @@ function DriversBar({ t }) {
         className="card relative overflow-hidden p-5"
       >
         <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-electric-500 blur-3xl opacity-15" />
-        <div className="relative space-y-3 text-sm leading-relaxed text-white/75">
+        <div className="relative space-y-3 break-words text-sm leading-relaxed text-white/75">
           <p className="text-white/90">{t.mpDriversIntro}</p>
           <ul className="grid gap-1.5 sm:grid-cols-3">
             {examples.map((ex, i) => (
-              <li key={i} className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
+              <li key={i} className="flex min-w-0 items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-electric-400" />
-                <span>{ex}</span>
+                <span className="min-w-0 break-words">{ex}</span>
               </li>
             ))}
           </ul>
@@ -844,8 +862,9 @@ function DriversBar({ t }) {
         viewport={{ once: true, margin: '-80px' }}
         className="grid gap-6 lg:grid-cols-5"
       >
-        <div className="card p-6 lg:col-span-3">
-          <div className="h-[420px] w-full">
+        <div className="card p-5 sm:p-6 lg:col-span-3">
+          <div className="overflow-x-auto pb-1">
+          <div className="h-[420px] min-w-[560px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} layout="vertical" margin={{ top: 5, right: 18, left: 18, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" horizontal={false} />
@@ -860,22 +879,23 @@ function DriversBar({ t }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 flex items-center justify-end gap-4 text-[11px]">
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-4 text-[11px]">
             <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-growth-400" />{t.mpImpactGood}</span>
             <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-400" />{t.mpImpactBad}</span>
           </div>
         </div>
-        <ul className="lg:col-span-2 space-y-2">
+        <ul className="space-y-2 lg:col-span-2">
           {drivers.map((d, i) => (
             <motion.li
               key={i}
               variants={fadeUp}
-              className="card p-3 flex items-start gap-3"
+              className="card flex min-w-0 items-start gap-3 p-3"
             >
               <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${d.impact === 'good' ? 'bg-growth-400' : 'bg-red-400'}`} />
-              <div>
-                <div className="text-sm font-semibold text-white/90">{d.feat}</div>
-                <p className="text-xs text-white/55 leading-relaxed">{d.desc}</p>
+              <div className="min-w-0">
+                <div className="break-words text-sm font-semibold text-white/90">{d.feat}</div>
+                <p className="break-words text-xs leading-relaxed text-white/55">{d.desc}</p>
               </div>
             </motion.li>
           ))}
@@ -894,13 +914,13 @@ function ClosingBlock({ t }) {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: '-80px' }}
-      className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-electric-500/[0.08] via-transparent to-growth-500/[0.08] p-10 text-center"
+      className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-electric-500/[0.08] via-transparent to-growth-500/[0.08] p-6 text-center sm:p-10"
     >
       <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-15" />
       <div className="absolute -right-16 -bottom-16 h-48 w-48 rounded-full bg-growth-500 blur-3xl opacity-15" />
       <div className="relative space-y-2">
-        <p className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{t.mpClosingLine1}</p>
-        <p className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{t.mpClosingLine2}</p>
+        <p className="break-words text-xl font-bold tracking-tight text-white sm:text-3xl">{t.mpClosingLine1}</p>
+        <p className="break-words text-xl font-bold tracking-tight text-white sm:text-3xl">{t.mpClosingLine2}</p>
       </div>
     </motion.div>
   )
@@ -951,7 +971,7 @@ export default function ModelPerformance({ t }) {
   return (
     <section
       id="model-performance"
-      className="relative mx-auto max-w-7xl space-y-20 px-6 py-24 scroll-mt-20"
+      className="relative mx-auto max-w-7xl space-y-14 px-4 py-16 scroll-mt-20 sm:space-y-20 sm:px-6 sm:py-24"
     >
       <div className="pointer-events-none absolute left-1/2 top-0 z-0 h-[620px] w-screen -translate-x-1/2 overflow-hidden opacity-55">
         <AnimatedStockChart />
