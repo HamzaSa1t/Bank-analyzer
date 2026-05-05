@@ -38,9 +38,18 @@ export default function BankSelector({ t, value, onSelect }) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.05 }}
-        className="mb-8 mt-2 max-w-2xl text-sm text-white/55"
+        className="mt-2 max-w-2xl text-sm text-white/55"
       >
         {t.pickBankSub}
+      </motion.p>
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="mb-8 mt-3 max-w-2xl text-sm font-semibold text-electric-400"
+      >
+        {t.pickBankCta}
       </motion.p>
 
       <div className="grid gap-5 md:grid-cols-2" id="bank-cards">
@@ -88,10 +97,6 @@ export default function BankSelector({ t, value, onSelect }) {
           )
         })}
       </div>
-
-      <p className="mt-6 text-center text-xs text-white/40">
-        {t.bankCardsDisclaimer}
-      </p>
     </section>
   )
 }

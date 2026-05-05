@@ -86,9 +86,15 @@ def predict(features: dict[str, Any], bank_type: str) -> dict[str, Any]:
     gross_salary = float(features.get("gross_salary", 0.0))
     existing_obligations = float(features.get("existing_obligations", 0.0))
 
-    offered_rate = get_interest_rate(pd_prob, bank_type)
-    fin = compute_financials(pd_prob, loan_amount, loan_months, offered_rate, lgd=LGD)
-    final_monthly_payment = float(fin["monthly_payment"])
+    interest_rate = get_interest_rate(pd_prob, bank_type)
+    financials = compute_financials(
+        pd=pd_prob,
+        loan_amount=loan_amount,
+        loan_months=loan_months,
+        annual_rate=interest_rate,
+        lgd=LGD,
+    )
+    final_monthly_payment = float(financials["monthly_payment"])
     final_dbr = (existing_obligations + final_monthly_payment) / max(gross_salary, 1.0)
 
     threshold = THRESHOLDS.get(bank_type, THRESHOLDS["conservative"])  # display only
@@ -102,7 +108,7 @@ def predict(features: dict[str, Any], bank_type: str) -> dict[str, Any]:
         failed_rules.append("score_below_min")
     if final_dbr > SAMA_DBR_CAP:
         failed_rules.append("final_dbr_exceeded")
-    if fin["profit"] <= 0:
+    if financials["profit"] <= 0:
         failed_rules.append("unprofitable")
 
     decision = "APPROVED" if not failed_rules else "REJECTED"
@@ -114,12 +120,12 @@ def predict(features: dict[str, Any], bank_type: str) -> dict[str, Any]:
         "credit_score": credit_score,
         "decision": decision,
         "risk_level": risk_level,
-        "offered_interest_rate": float(offered_rate),
+        "offered_interest_rate": float(interest_rate),
         "final_monthly_payment": final_monthly_payment,
         "final_dbr": float(final_dbr),
-        "expected_revenue": float(fin["revenue"]),
-        "expected_loss": float(fin["expected_loss"]),
-        "expected_profit": float(fin["profit"]),
+        "expected_revenue": float(financials["revenue"]),
+        "expected_loss": float(financials["expected_loss"]),
+        "expected_profit": float(financials["profit"]),
         "max_pd_allowed": float(max_pd),
         "pd_threshold": float(threshold),
         "min_score": int(min_score),

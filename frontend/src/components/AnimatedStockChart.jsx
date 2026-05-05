@@ -1,64 +1,55 @@
 import { useMemo } from 'react'
 
-function makeSeries(seed = 1, points = 64) {
+const W = 1600
+const H = 700
+
+function makeSeamlessSeries(seed = 1, points = 200) {
   const out = []
-  let val = 44 + seed * 4
   for (let i = 0; i < points; i++) {
-    const cycle = Math.sin(i * 0.36 + seed) * 3.4
-    const chop = Math.sin(i * 1.9 + seed * 0.7) * 1.2
-    const shock = i % 13 === 0 ? (seed % 2 === 0 ? -4.5 : 4.2) : 0
-    const drift = seed % 3 === 0 ? -0.04 : 0.09
-    val = Math.min(92, Math.max(10, val + cycle * 0.16 + chop + shock + drift))
-    out.push(val)
+    const t = (i / points) * Math.PI * 2
+    let val = 50
+    val += Math.sin(t * 1 + seed * 0.7) * 14
+    val += Math.sin(t * 2 + seed * 1.3) * 7
+    val += Math.cos(t * 3 + seed * 2.1) * 4
+    val += Math.sin(t * 5 + seed * 0.5) * 2.6
+    val += Math.cos(t * 7 + seed * 1.9) * 1.4
+    out.push(Math.max(15, Math.min(85, val)))
   }
   return out
 }
 
-function pathFor(series, w, h, padX = 0) {
-  const n = series.length
-  const stepX = (w - padX * 2) / (n - 1)
-  return series
-    .map((v, i) => {
-      const x = padX + i * stepX
-      const y = h - (v / 100) * h
-      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
-    })
-    .join(' ')
+function pathFor(series, w, h) {
+  const N = series.length
+  const stepX = w / N
+  const cmds = []
+  for (let i = 0; i <= N; i++) {
+    const x = i * stepX
+    const v = series[i % N]
+    const y = h - (v / 100) * h
+    cmds.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`)
+  }
+  return cmds.join(' ')
 }
 
-function areaFor(series, w, h, padX = 0) {
-  const line = pathFor(series, w, h, padX)
-  return `${line} L ${w - padX} ${h} L ${padX} ${h} Z`
+function areaFor(series, w, h) {
+  const line = pathFor(series, w, h)
+  return `${line} L ${w} ${h} L 0 ${h} Z`
 }
 
 const LINE_CONFIGS = [
-  { color: '#34e89f', width: 2.2, opacity: 0.9, seed: 1 },
-  { color: '#3b82ff', width: 1.8, opacity: 0.74, seed: 4 },
-  { color: '#f59e0b', width: 1.25, opacity: 0.38, seed: 7 },
-  { color: '#ef4444', width: 1.15, opacity: 0.32, seed: 10 },
-  { color: '#7afcb1', width: 0.9, opacity: 0.26, seed: 13 },
+  { color: '#34e89f', width: 2.4, opacity: 0.92, seed: 1 },
+  { color: '#3b82ff', width: 1.8, opacity: 0.7,  seed: 4 },
+  { color: '#f59e0b', width: 1.2, opacity: 0.36, seed: 7 },
 ]
 
 export default function AnimatedStockChart() {
-  const W = 1600
-  const H = 700
-
   const lines = useMemo(() => {
-    return LINE_CONFIGS.map((cfg, i) => {
-      const base = makeSeries(cfg.seed, 96)
+    return LINE_CONFIGS.map((cfg) => {
+      const series = makeSeamlessSeries(cfg.seed, 200)
       return {
         cfg,
-        d: pathFor(base, W, H, 28),
-        area: areaFor(base, W, H, 28),
-        lastY: H - (base[base.length - 1] / 100) * H,
-        lastX: W - 28,
-        bars: base.filter((_, idx) => idx % 4 === 0).map((v, idx) => {
-          const x = 28 + idx * 4 * ((W - 56) / (base.length - 1))
-          const y = H - (v / 100) * H
-          const high = Math.max(16, y - 18 - ((idx + i) % 5) * 3)
-          const low = Math.min(H - 16, y + 16 + ((idx + i) % 4) * 4)
-          return { x, y, high, low, up: (idx + i) % 3 !== 0 }
-        }),
+        d: pathFor(series, W, H),
+        area: areaFor(series, W, H),
       }
     })
   }, [])
@@ -89,43 +80,23 @@ export default function AnimatedStockChart() {
       >
         <defs>
           {LINE_CONFIGS.map((c, i) => (
-            <linearGradient key={i} id={`lineGradient${i}`} x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0" stopColor={c.color} stopOpacity="0" />
-              <stop offset="0.55" stopColor={c.color} stopOpacity="0.75" />
-              <stop offset="1" stopColor={c.color} stopOpacity="1" />
-            </linearGradient>
-          ))}
-          {LINE_CONFIGS.map((c, i) => (
             <linearGradient key={`area-${i}`} id={`areaGradient${i}`} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stopColor={c.color} stopOpacity={i === 0 ? '0.18' : '0.08'} />
+              <stop offset="0" stopColor={c.color} stopOpacity={i === 0 ? '0.22' : '0.1'} />
               <stop offset="1" stopColor={c.color} stopOpacity="0" />
             </linearGradient>
           ))}
         </defs>
 
         <g className="stock-chart-scroll">
-          {[0, 1].map(copy => (
+          {[0, 1].map((copy) => (
             <g key={copy} transform={`translate(${copy * W} 0)`}>
               {lines.map((l, i) => (
                 <g key={i}>
-                  {i < 2 && <path d={l.area} fill={`url(#areaGradient${i})`} opacity="0.9" />}
-                  {i < 3 && l.bars.map((b, idx) => (
-                    <g key={idx} opacity={i === 0 ? 0.32 : 0.16}>
-                      <line x1={b.x} x2={b.x} y1={b.high} y2={b.low} stroke={l.cfg.color} strokeWidth="1" />
-                      <rect
-                        x={b.x - 3}
-                        y={Math.min(b.y, b.y + (b.up ? -11 : 11))}
-                        width="6"
-                        height="11"
-                        rx="1"
-                        fill={b.up ? '#34e89f' : '#ef4444'}
-                      />
-                    </g>
-                  ))}
+                  {i < 2 && <path d={l.area} fill={`url(#areaGradient${i})`} />}
                   <path
                     d={l.d}
                     fill="none"
-                    stroke={`url(#lineGradient${i})`}
+                    stroke={l.cfg.color}
                     strokeWidth={l.cfg.width}
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -133,14 +104,6 @@ export default function AnimatedStockChart() {
                     style={{
                       filter: i < 2 ? `drop-shadow(0 0 8px ${l.cfg.color}80)` : 'none',
                     }}
-                  />
-                  <circle
-                    cx={l.lastX}
-                    cy={l.lastY}
-                    r={i < 2 ? 4.5 : 2.5}
-                    fill={l.cfg.color}
-                    opacity={l.cfg.opacity}
-                    style={{ filter: `drop-shadow(0 0 10px ${l.cfg.color})` }}
                   />
                 </g>
               ))}

@@ -18,11 +18,32 @@ export default function LLMReport({
   const dot = approved ? 'bg-growth-400' : 'bg-red-400'
   const label = approved ? t.decisionApproved : t.decisionRejected
 
-  const summary = hardRuleRejection || riskSummary || '-'
-  const explanation = hardRuleRejection || decisionExplanation || '-'
-  const strengths = Array.isArray(keyStrengths) ? keyStrengths : []
-  const concerns = Array.isArray(keyConcerns) ? keyConcerns : []
-  const actions = Array.isArray(suggestedActions) ? suggestedActions : []
+  const fallbackSummary = approved
+    ? 'The application cleared the required risk and profitability gates.'
+    : 'The application did not clear the required risk and profitability gates.'
+  const fallbackExplanation = approved
+    ? 'The backend decision is APPROVED and no failed decision gates were reported.'
+    : 'The backend decision is REJECTED. Review the failed gates in the decision logic section.'
+
+  // Treat "-" and whitespace-only strings as missing so we never surface a
+  // dash placeholder in the narrative card.
+  const cleanText = (s) => {
+    if (typeof s !== 'string') return null
+    const trimmed = s.trim()
+    return trimmed === '' || trimmed === '-' ? null : s
+  }
+  const cleanList = (xs) =>
+    (Array.isArray(xs) ? xs : []).filter((x) => cleanText(typeof x === 'string' ? x : String(x)))
+
+  // Use the backend's risk_summary / decision_explanation as-is — overriding
+  // them with hardRuleRejection causes the same rule sentence to appear in
+  // both fields (and again as key_concerns[0]). hardRuleRejection is only a
+  // fallback when the backend omits a sentence.
+  const summary = cleanText(riskSummary) || hardRuleRejection || fallbackSummary
+  const explanation = cleanText(decisionExplanation) || hardRuleRejection || fallbackExplanation
+  const strengths = cleanList(keyStrengths)
+  const concerns = cleanList(keyConcerns)
+  const actions = cleanList(suggestedActions)
 
   return (
     <motion.div

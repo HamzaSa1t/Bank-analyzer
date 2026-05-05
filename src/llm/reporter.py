@@ -23,6 +23,23 @@ def _num(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _normalize_text(value: str) -> str:
+    """Whitespace-only normalization for cross-field equality checks."""
+    return " ".join(str(value or "").split()).strip()
+
+
+def deduplicate_list(items: list[str]) -> list[str]:
+    """Drop repeated items in-order, comparing on whitespace-normalized text."""
+    seen: set[str] = set()
+    result: list[str] = []
+    for item in items or []:
+        key = _normalize_text(item)
+        if key and key not in seen:
+            result.append(item)
+            seen.add(key)
+    return result
+
+
 def _fmt_pct(value: float, dp: int = 2) -> str:
     return f"{value * 100:.{dp}f}%"
 
@@ -215,13 +232,11 @@ def _build_deterministic(ml_result: dict[str, Any], language: str) -> dict[str, 
         # Approved cases must NOT carry fabricated concerns.
         key_concerns = []
     else:
-        primary = key_concerns[0] if key_concerns else (
-            "تعذّر اجتياز جميع بوابات القرار." if lang == "ar"
-            else "The application did not clear all decision gates."
-        )
+        # risk_summary stays high-level — the specific failed-gate sentences live
+        # in key_concerns, so we never embed key_concerns[0] verbatim here.
         if lang == "ar":
             risk_summary = (
-                f"تم رفض الطلب لعدم اجتياز إحدى بوابات القرار. السبب الأساسي: {primary}"
+                "تم رفض الطلب لعدم اجتياز جميع بوابات القرار بعد احتساب النموذج والتسعير."
             )
             failed_text = (
                 "، ".join(AR_RULE_LABELS.get(c, c) for c in failed) if failed else "لا يوجد"
@@ -237,8 +252,8 @@ def _build_deterministic(ml_result: dict[str, Any], language: str) -> dict[str, 
             )
         else:
             risk_summary = (
-                f"The application was rejected because one or more decision gates failed. "
-                f"Primary reason: {primary}"
+                "The application was rejected because not all decision gates passed "
+                "after model scoring and pricing."
             )
             failed_text = ", ".join(failed) if failed else "none"
             decision_explanation = (
@@ -250,10 +265,10 @@ def _build_deterministic(ml_result: dict[str, Any], language: str) -> dict[str, 
 
     return {
         "risk_summary": risk_summary,
-        "key_strengths": key_strengths,
-        "key_concerns": key_concerns,
+        "key_strengths": deduplicate_list(key_strengths),
+        "key_concerns": deduplicate_list(key_concerns),
         "decision_explanation": decision_explanation,
-        "suggested_actions": suggested_actions,
+        "suggested_actions": deduplicate_list(suggested_actions),
     }
 
 

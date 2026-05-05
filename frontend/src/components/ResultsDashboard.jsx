@@ -9,9 +9,13 @@ const riskMap = {
   LOW: { key: 'riskLow', cls: 'text-growth-300 border-growth-500/30' },
 }
 
-const fmtPct = (n, dp = 1) => `${(Number(n || 0) * 100).toFixed(dp)}%`
+const isFiniteNumber = (n) => n !== null && n !== undefined && Number.isFinite(Number(n))
+const fmtPct = (n, dp = 1) =>
+  isFiniteNumber(n) ? `${(Number(n) * 100).toFixed(dp)}%` : 'Unavailable'
 const fmtSar = (n) =>
-  new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(n || 0))
+  isFiniteNumber(n)
+    ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(n))
+    : 'Unavailable'
 
 const SAMA_LIMIT = 0.3333
 
@@ -21,44 +25,81 @@ export default function ResultsDashboard({ result, t }) {
   const isHardRejected = result.passed_hard_rules === false
   const r = riskMap[result.risk_level] || riskMap.MEDIUM
 
-  const modelPd = Number(result.model_pd ?? result.pd_prob ?? 0)
-  const maxPd = Number(result.max_pd_allowed ?? 0)
-  const pdRef = Number(result.pd_threshold ?? 0)
-  const minScore = Number(result.min_score ?? 0)
-  const creditScore = Number(result.credit_score ?? 0)
-  const finalDbr = Number(result.final_dbr ?? result.dbr ?? 0)
-  const profit = Number(result.expected_profit ?? 0)
+  const modelPd = result.model_pd
+  const maxPd = result.max_pd_allowed
+  const pdRef = result.pd_threshold
+  const minScore = result.min_score
+  const creditScore = result.credit_score
+  const finalDbr = result.final_dbr
+  const profit = result.expected_profit
   const failedRules = Array.isArray(result.failed_rules) ? result.failed_rules : []
 
-  // When hard rules fail, the four model-dependent gates were never evaluated —
-  // mark them `skipped` so the UI can render ⏭ instead of a misleading ✕ with
-  // zero values.
+  // Prefer the backend-emitted gate_results so client and server can never
+  // disagree. Fall back to the recomputed-from-numbers logic only if the
+  // backend response is missing the field (legacy responses).
+  const backendGates =
+    result.gate_results && typeof result.gate_results === 'object'
+      ? result.gate_results
+      : null
+
+  const gateStatus = (key, fallback) => {
+    if (backendGates && typeof backendGates[key] === 'string') {
+      const v = backendGates[key]
+      return { pass: v === 'pass', skipped: v === 'skipped' }
+    }
+    return fallback
+  }
+
+  const hardStatus = gateStatus('hard_rules', { pass: !isHardRejected, skipped: false })
+  const pdStatus = gateStatus('pd_limit', {
+    pass:
+      !isHardRejected &&
+      isFiniteNumber(modelPd) &&
+      isFiniteNumber(maxPd) &&
+      Number(modelPd) <= Number(maxPd),
+    skipped: isHardRejected,
+  })
+  const scoreStatus = gateStatus('credit_score', {
+    pass:
+      !isHardRejected &&
+      isFiniteNumber(creditScore) &&
+      isFiniteNumber(minScore) &&
+      Number(creditScore) >= Number(minScore),
+    skipped: isHardRejected,
+  })
+  const dbrStatus = gateStatus('final_dbr', {
+    pass: !isHardRejected && isFiniteNumber(finalDbr) && Number(finalDbr) <= SAMA_LIMIT,
+    skipped: isHardRejected,
+  })
+  const profitStatus = gateStatus('profitability', {
+    pass: !isHardRejected && isFiniteNumber(profit) && Number(profit) > 0,
+    skipped: isHardRejected,
+  })
+
+  // Detail / sub strings stay client-side — they read the displayed numbers
+  // straight off the response and are never shown when the gate was skipped.
   const gates = [
-    { label: t.gateHardRules, pass: !isHardRejected },
+    { label: t.gateHardRules, ...hardStatus },
     {
       label: t.gatePdMax,
-      pass: !isHardRejected && modelPd <= maxPd,
-      skipped: isHardRejected,
-      detail: isHardRejected ? null : `${fmtPct(modelPd, 2)} / ${fmtPct(maxPd, 2)}`,
-      sub: isHardRejected ? null : `${t.preferredRef}: ${fmtPct(pdRef, 2)}`,
+      ...pdStatus,
+      detail: pdStatus.skipped ? null : `${fmtPct(modelPd, 2)} / ${fmtPct(maxPd, 2)}`,
+      sub: pdStatus.skipped ? null : `${t.preferredRef}: ${fmtPct(pdRef, 2)}`,
     },
     {
       label: t.gateScoreMin,
-      pass: !isHardRejected && creditScore >= minScore,
-      skipped: isHardRejected,
-      detail: isHardRejected ? null : `${creditScore} / ${minScore}`,
+      ...scoreStatus,
+      detail: scoreStatus.skipped ? null : `${creditScore} / ${minScore}`,
     },
     {
       label: t.gateFinalDbr,
-      pass: !isHardRejected && finalDbr <= SAMA_LIMIT,
-      skipped: isHardRejected,
-      detail: isHardRejected ? null : `${fmtPct(finalDbr, 2)} / ${fmtPct(SAMA_LIMIT, 2)}`,
+      ...dbrStatus,
+      detail: dbrStatus.skipped ? null : `${fmtPct(finalDbr, 2)} / ${fmtPct(SAMA_LIMIT, 2)}`,
     },
     {
       label: t.gateProfit,
-      pass: !isHardRejected && profit > 0,
-      skipped: isHardRejected,
-      detail: isHardRejected ? null : `SAR ${fmtSar(profit)}`,
+      ...profitStatus,
+      detail: profitStatus.skipped ? null : `SAR ${fmtSar(profit)}`,
     },
   ]
 
@@ -97,11 +138,11 @@ export default function ResultsDashboard({ result, t }) {
           <FinancialBreakdown
             t={t}
             modelPd={modelPd}
-            offeredRate={Number(result.offered_interest_rate ?? 0)}
-            monthlyPayment={Number(result.final_monthly_payment ?? 0)}
+            offeredRate={result.offered_interest_rate}
+            monthlyPayment={result.final_monthly_payment}
             finalDbr={finalDbr}
-            revenue={Number(result.expected_revenue ?? 0)}
-            loss={Number(result.expected_loss ?? 0)}
+            revenue={result.expected_revenue}
+            loss={result.expected_loss}
             profit={profit}
           />
         </>
@@ -112,6 +153,7 @@ export default function ResultsDashboard({ result, t }) {
       <WhyBlock
         t={t}
         approved={approved}
+        failedRules={failedRules}
         failedReasons={failedReasons}
         policyReason={policyReason}
       />
@@ -131,10 +173,11 @@ export default function ResultsDashboard({ result, t }) {
 }
 
 function ScoreAndShapGrid({ result, riskBadge, t, modelPd }) {
-  const exceedsSama = (result.dbr || 0) > SAMA_LIMIT
+  const dbr = result.final_dbr ?? result.dbr
+  const exceedsSama = isFiniteNumber(dbr) && Number(dbr) > SAMA_LIMIT
   const samaMessage = exceedsSama ? t.samaExceedsPriv : t.samaWithinPriv
-  const dbrPct = Math.min(100, Math.max(0, (result.dbr || 0) * 100))
-  const dbrTone = exceedsSama ? 'bg-red-400' : result.dbr > 0.25 ? 'bg-amber-400' : 'bg-growth-400'
+  const dbrPct = isFiniteNumber(dbr) ? Math.min(100, Math.max(0, Number(dbr) * 100)) : 0
+  const dbrTone = exceedsSama ? 'bg-red-400' : Number(dbr || 0) > 0.25 ? 'bg-amber-400' : 'bg-growth-400'
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -154,7 +197,7 @@ function ScoreAndShapGrid({ result, riskBadge, t, modelPd }) {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="label-muted">{t.dbr}</span>
-            <span className="font-mono text-white/80">{fmtPct(result.dbr)}</span>
+            <span className="font-mono text-white/80">{fmtPct(dbr)}</span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
             <motion.div
@@ -211,17 +254,32 @@ function FinancialBreakdown({
   profit,
 }) {
   const profitTone =
-    profit > 0 ? 'text-growth-300' : profit < 0 ? 'text-red-300' : 'text-white/80'
-  const dbrTone = finalDbr > SAMA_LIMIT ? 'text-red-300' : 'text-white/80'
+    Number(profit) > 0 ? 'text-growth-300' : Number(profit) < 0 ? 'text-red-300' : 'text-white/80'
+  const dbrTone = Number(finalDbr) > SAMA_LIMIT ? 'text-red-300' : 'text-white/80'
 
   const rows = [
     { label: t.modelPd, value: fmtPct(modelPd, 2) },
     { label: t.offeredInterestRate, value: fmtPct(offeredRate, 2) },
-    { label: t.finalMonthlyPayment, value: `SAR ${fmtSar(monthlyPayment)}` },
+    {
+      label: t.finalMonthlyPayment,
+      value: isFiniteNumber(monthlyPayment) ? `SAR ${fmtSar(monthlyPayment)}` : 'Unavailable',
+    },
     { label: t.finalDbr, value: fmtPct(finalDbr, 2), valueClass: dbrTone },
-    { label: t.expectedRevenue, value: `SAR ${fmtSar(revenue)}` },
-    { label: t.expectedLoss, value: `SAR ${fmtSar(loss)}`, valueClass: 'text-red-300/80' },
-    { label: t.expectedProfit, value: `SAR ${fmtSar(profit)}`, valueClass: profitTone, bold: true },
+    {
+      label: t.expectedRevenue,
+      value: isFiniteNumber(revenue) ? `SAR ${fmtSar(revenue)}` : 'Unavailable',
+    },
+    {
+      label: t.expectedLoss,
+      value: isFiniteNumber(loss) ? `SAR ${fmtSar(loss)}` : 'Unavailable',
+      valueClass: 'text-red-300/80',
+    },
+    {
+      label: t.expectedProfit,
+      value: isFiniteNumber(profit) ? `SAR ${fmtSar(profit)}` : 'Unavailable',
+      valueClass: profitTone,
+      bold: true,
+    },
   ]
 
   return (
@@ -309,8 +367,8 @@ function DecisionLogic({ t, gates }) {
   )
 }
 
-function WhyBlock({ t, approved, failedReasons, policyReason }) {
-  if (approved) {
+function WhyBlock({ t, approved, failedRules, failedReasons, policyReason }) {
+  if (approved && failedRules.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 12 }}

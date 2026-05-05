@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src import data_loader
 
+from .excel_logger import log_assessment
 from .schemas import AssessmentRequest, AssessmentResponse, SimahProfile
 from .services import run_assessment
 
@@ -89,7 +90,9 @@ def simulate_simah() -> SimahProfile:
 
 @app.post("/assess", response_model=AssessmentResponse)
 def assess(req: AssessmentRequest) -> AssessmentResponse:
-    return run_assessment(req)
+    response = run_assessment(req)
+    log_assessment(req, response)
+    return response
 
 
 @app.get("/model-performance")
