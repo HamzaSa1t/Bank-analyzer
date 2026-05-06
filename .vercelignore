@@ -1,0 +1,16 @@
+# Backend lives on Railway — keep it out of the Vercel deployment.
+api/
+src/
+models/
+data/
+notebooks/
+tests/
+__pycache__/
+*.py
+*.pyc
+*.ipynb
+requirements.txt
+railway.json
+bank_logs.xlsx
+image.png
+*.log
