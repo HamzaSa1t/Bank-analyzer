@@ -17,15 +17,15 @@ export default function Navigation({ t, lang, onLangChange }) {
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className="sticky top-0 z-40 w-full backdrop-blur-md bg-navy-950/40 border-b border-white/5"
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-        <Link to="/" className="flex items-center gap-2 text-white">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
+        <Link to="/" className="flex min-w-0 items-center gap-2 text-white">
           <span className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-electric-500 to-growth-500 shadow-glow">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M3 17l6-6 4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M14 7h7v7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          <span className="text-base font-semibold tracking-wide">{t.brand}</span>
+          <span className="truncate text-sm font-semibold tracking-wide sm:text-base">{t.brand}</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-9">
@@ -34,7 +34,7 @@ export default function Navigation({ t, lang, onLangChange }) {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => onLangChange(lang === 'ar' ? 'en' : 'ar')}
@@ -121,7 +121,7 @@ function CtaButton({ label }) {
   }
 
   return (
-    <button type="button" onClick={handleClick} className="btn-primary !py-2.5 !px-6 !text-sm">
+    <button type="button" onClick={handleClick} className="btn-primary hidden !py-2.5 !px-5 !text-sm sm:inline-flex lg:!px-6">
       {label}
     </button>
   )

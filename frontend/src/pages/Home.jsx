@@ -57,14 +57,14 @@ export default function Home({ t, lang }) {
       <main
         id="how"
         ref={appRef}
-        className="relative mx-auto max-w-7xl space-y-10 px-6 py-20 scroll-mt-20"
+        className="relative mx-auto max-w-7xl space-y-10 px-4 py-14 scroll-mt-20 sm:px-6 sm:py-20"
       >
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="max-w-2xl"
+          className="max-w-2xl break-words"
         >
           <span className="label-muted">{t.heroEyebrow}</span>
           <h2 className="mt-2 text-3xl font-bold sm:text-4xl">

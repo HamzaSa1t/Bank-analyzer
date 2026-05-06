@@ -52,12 +52,12 @@ export default function LLMReport({
       transition={{ duration: 0.5 }}
       className="card overflow-hidden"
     >
-      <div className={`flex items-center gap-3 border-b px-6 py-5 ${banner}`}>
+      <div className={`flex min-w-0 items-center gap-3 border-b px-5 py-5 sm:px-6 ${banner}`}>
         <span className={`h-2.5 w-2.5 rounded-full ${dot} animate-pulse`} />
-        <span className="text-lg font-bold tracking-wide">{label}</span>
+        <span className="min-w-0 break-words text-lg font-bold tracking-wide">{label}</span>
       </div>
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-5 sm:p-6">
         <Paragraph title={t.riskSummary} body={humanizeFeatureText(summary, t)} />
         <BulletList title={t.keyStrengths} items={strengths} t={t} tone="good" />
         <BulletList title={t.keyConcerns} items={concerns} t={t} tone="bad" />
@@ -72,7 +72,7 @@ function Paragraph({ title, body }) {
   return (
     <div className="space-y-2">
       <h4 className="label-muted">{title}</h4>
-      <p className="text-sm leading-relaxed text-white/80 whitespace-pre-line">{body}</p>
+      <p className="whitespace-pre-line break-words text-sm leading-relaxed text-white/80">{body}</p>
     </div>
   )
 }
@@ -86,9 +86,9 @@ function BulletList({ title, items, t, tone }) {
       <h4 className="label-muted">{title}</h4>
       <ul className="space-y-2">
         {items.map((item, idx) => (
-          <li key={idx} className="flex items-start gap-3 text-sm leading-relaxed text-white/80">
+          <li key={idx} className="flex min-w-0 items-start gap-3 text-sm leading-relaxed text-white/80">
             <span className={`mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full ${dotColor}`} />
-            <span>{humanizeFeatureText(String(item), t)}</span>
+            <span className="min-w-0 break-words">{humanizeFeatureText(String(item), t)}</span>
           </li>
         ))}
       </ul>

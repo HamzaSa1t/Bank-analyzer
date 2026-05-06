@@ -117,7 +117,7 @@ export default function ResultsDashboard({ result, t }) {
       transition={{ duration: 0.6 }}
       className="space-y-6 scroll-mt-20"
     >
-      <h2 className="text-2xl font-bold sm:text-3xl">
+      <h2 className="break-words text-2xl font-bold sm:text-3xl">
         <span className="bg-gradient-to-r from-white to-growth-300 bg-clip-text text-transparent">
           {t.resultsTitle}
         </span>
@@ -125,7 +125,7 @@ export default function ResultsDashboard({ result, t }) {
 
       <div
         role="note"
-        className="rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white/60"
+        className="break-words rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white/60"
       >
         {t.resultsDisclaimer}
       </div>
@@ -181,7 +181,7 @@ function ScoreAndShapGrid({ result, riskBadge, t, modelPd }) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <div className="card p-6 space-y-6">
+      <div className="card space-y-6 p-5 sm:p-6">
         <CreditScoreGauge score={result.credit_score} label={t.creditScore} />
 
         <div className="flex flex-wrap items-center gap-3">
@@ -195,7 +195,7 @@ function ScoreAndShapGrid({ result, riskBadge, t, modelPd }) {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
             <span className="label-muted">{t.dbr}</span>
             <span className="font-mono text-white/80">{fmtPct(dbr)}</span>
           </div>
@@ -207,7 +207,7 @@ function ScoreAndShapGrid({ result, riskBadge, t, modelPd }) {
               className={`h-full ${dbrTone}`}
             />
           </div>
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <span className="label-muted">{t.samaStatus}</span>
             <span
               className={`text-xs font-semibold ${
@@ -220,7 +220,7 @@ function ScoreAndShapGrid({ result, riskBadge, t, modelPd }) {
         </div>
       </div>
 
-      <div className="card p-6">
+      <div className="card p-5 sm:p-6">
         <ShapPlot top5={result.shap_top5} t={t} />
       </div>
     </div>
@@ -233,9 +233,9 @@ function AssessmentStatus({ t }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="card p-6"
+      className="card p-5 sm:p-6"
     >
-      <h3 className="text-lg font-semibold text-white">{t.assessmentStatusTitle}</h3>
+      <h3 className="break-words text-lg font-semibold text-white">{t.assessmentStatusTitle}</h3>
       <p className="mt-3 text-sm leading-relaxed text-white/70 whitespace-pre-line">
         {t.assessmentStatusBody}
       </p>
@@ -287,18 +287,18 @@ function FinancialBreakdown({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="card p-6"
+      className="card p-5 sm:p-6"
     >
-      <h3 className="text-lg font-semibold text-white">{t.financialBreakdown}</h3>
+      <h3 className="break-words text-lg font-semibold text-white">{t.financialBreakdown}</h3>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {rows.map((row) => (
           <div
             key={row.label}
-            className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-4 py-3"
+            className="flex min-w-0 flex-col gap-1 rounded-lg border border-white/5 bg-white/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
           >
             <span className="label-muted">{row.label}</span>
             <span
-              className={`font-mono ${row.valueClass || 'text-white/80'} ${
+              className={`break-words font-mono ${row.valueClass || 'text-white/80'} ${
                 row.bold ? 'font-semibold' : ''
               }`}
             >
@@ -317,9 +317,9 @@ function DecisionLogic({ t, gates }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="card p-6"
+      className="card p-5 sm:p-6"
     >
-      <h3 className="text-lg font-semibold text-white">{t.decisionLogic}</h3>
+      <h3 className="break-words text-lg font-semibold text-white">{t.decisionLogic}</h3>
       <ul className="mt-4 space-y-2">
         {gates.map((gate) => {
           const iconCls = gate.skipped
@@ -338,24 +338,24 @@ function DecisionLogic({ t, gates }) {
           return (
             <li
               key={gate.label}
-              className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-4 py-3 text-sm"
+              className="flex min-w-0 flex-col gap-3 rounded-lg border border-white/5 bg-white/5 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <span
                   className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${iconCls}`}
                 >
                   {icon}
                 </span>
-                <div className="space-y-0.5">
-                  <div className={gate.skipped ? 'text-white/50' : 'text-white/80'}>
+                <div className="min-w-0 space-y-0.5">
+                  <div className={`break-words ${gate.skipped ? 'text-white/50' : 'text-white/80'}`}>
                     {gate.label}
                   </div>
                   {gate.sub && <div className="text-xs text-white/40">{gate.sub}</div>}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3 sm:justify-end">
                 {gate.detail && (
-                  <span className="font-mono text-xs text-white/60">{gate.detail}</span>
+                  <span className="break-words font-mono text-xs text-white/60">{gate.detail}</span>
                 )}
                 <span className={`text-xs font-semibold ${verdictCls}`}>{verdict}</span>
               </div>

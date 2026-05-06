@@ -29,7 +29,7 @@ export default function BankSelector({ t, value, onSelect }) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
-        className="text-2xl font-bold sm:text-3xl"
+        className="break-words text-2xl font-bold sm:text-3xl"
       >
         {t.pickBank}
       </motion.h2>
@@ -38,7 +38,7 @@ export default function BankSelector({ t, value, onSelect }) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.05 }}
-        className="mt-2 max-w-2xl text-sm text-white/55"
+        className="mt-2 max-w-2xl break-words text-sm text-white/55"
       >
         {t.pickBankSub}
       </motion.p>
@@ -47,7 +47,7 @@ export default function BankSelector({ t, value, onSelect }) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="mb-8 mt-3 max-w-2xl text-sm font-semibold text-electric-400"
+        className="mb-8 mt-3 max-w-2xl break-words text-sm font-semibold text-electric-400"
       >
         {t.pickBankCta}
       </motion.p>
@@ -68,7 +68,7 @@ export default function BankSelector({ t, value, onSelect }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className={`card card-hover group relative overflow-hidden p-6 text-start transition ${
+              className={`card card-hover group relative overflow-hidden p-5 text-start transition sm:p-6 ${
                 selected ? `ring-2 ${accentRing} ${accentGlow}` : ''
               }`}
             >
@@ -78,16 +78,16 @@ export default function BankSelector({ t, value, onSelect }) {
                 }`}
               />
               <div className="relative space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold">{t[b.titleKey]}</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="min-w-0 break-words text-lg font-semibold sm:text-xl">{t[b.titleKey]}</h3>
                   {selected && (
                     <span className={`pill ${b.accent === 'growth' ? 'border-growth-400/40 text-growth-300' : 'border-electric-400/40 text-electric-400'}`}>
                       ✓
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-white/55">{t[b.descKey]}</p>
-                <div className="grid grid-cols-3 gap-3 pt-2">
+                <p className="break-words text-sm text-white/55">{t[b.descKey]}</p>
+                <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
                   <Stat label={t.pdThreshold} value={b.pd} accent={accentText} />
                   <Stat label={t.minScore} value={b.minScore} accent={accentText} />
                   <Stat label={t.approvalStyle} value={t[b.approvalKey]} accent={accentText} />
@@ -103,8 +103,8 @@ export default function BankSelector({ t, value, onSelect }) {
 
 function Stat({ label, value, accent }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
-      <div className={`text-base font-semibold ${accent}`}>{value}</div>
+    <div className="min-w-0 rounded-xl border border-white/5 bg-white/[0.02] p-3">
+      <div className={`break-words text-base font-semibold ${accent}`}>{value}</div>
       <div className="mt-1 text-[10px] uppercase tracking-wider text-white/40">{label}</div>
     </div>
   )

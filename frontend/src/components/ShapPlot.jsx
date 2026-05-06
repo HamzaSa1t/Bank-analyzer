@@ -3,8 +3,8 @@ import { prettyFeature } from '../lib/featureLabels.js'
 export default function ShapPlot({ top5, t }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-white/80">{t.shapTitle}</h4>
+      <div className="flex min-w-0 items-center justify-between">
+        <h4 className="break-words text-sm font-semibold text-white/80">{t.shapTitle}</h4>
       </div>
 
       {top5 && top5.length > 0 && (
@@ -14,9 +14,9 @@ export default function ShapPlot({ top5, t }) {
             return (
               <li
                 key={i}
-                className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
               >
-                <span className="truncate text-white/80">{prettyFeature(d.feature, t)}</span>
+                <span className="min-w-0 break-words text-white/80">{prettyFeature(d.feature, t)}</span>
                 <span
                   className={`font-mono text-xs ${
                     positive ? 'text-red-300' : 'text-growth-300'

@@ -10,18 +10,18 @@ const fmt = (n, digits = 0) => {
 
 export default function SimahPanel({ t, simah, onSimulate, loading }) {
   return (
-    <div className="card p-6 md:p-8 space-y-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
+    <div className="card space-y-5 p-5 sm:p-6 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
           <span className="label-muted block">01</span>
-          <h3 className="mt-1 text-xl font-semibold">{t.simahTitle}</h3>
-          <p className="mt-2 max-w-xl text-sm text-white/55">{t.simahHelper}</p>
+          <h3 className="mt-1 break-words text-xl font-semibold">{t.simahTitle}</h3>
+          <p className="mt-2 max-w-xl break-words text-sm text-white/55">{t.simahHelper}</p>
         </div>
         <button
           type="button"
           onClick={onSimulate}
           disabled={loading}
-          className="btn-ghost"
+          className="btn-ghost w-full sm:w-auto"
         >
           {loading ? (
             <span className="inline-flex items-center gap-2">
@@ -47,7 +47,7 @@ export default function SimahPanel({ t, simah, onSimulate, loading }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="grid grid-cols-2 gap-3 md:grid-cols-5"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
           >
             <Cell label={t.simahTotalDebt} value={fmt(simah.total_debt)} />
             <Cell
@@ -87,8 +87,8 @@ function Cell({ label, value, tone }) {
       ? 'text-amber-300 border-amber-400/30'
       : 'text-growth-300 border-growth-500/20'
   return (
-    <div className={`rounded-xl border bg-white/[0.02] p-3 ${accent.split(' ')[1]}`}>
-      <div className={`text-base font-semibold ${accent.split(' ')[0]}`}>{value}</div>
+    <div className={`min-w-0 rounded-xl border bg-white/[0.02] p-3 ${accent.split(' ')[1]}`}>
+      <div className={`break-words text-base font-semibold ${accent.split(' ')[0]}`}>{value}</div>
       <div className="mt-1 text-[10px] uppercase tracking-wider text-white/40">{label}</div>
     </div>
   )

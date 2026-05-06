@@ -16,6 +16,7 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 .stock-chart-scroll {
@@ -38,25 +39,25 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-electric-500 to-growth-500 px-7 py-3 text-sm font-semibold text-white shadow-glow transition hover:shadow-glowGreen hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed;
+    @apply inline-flex max-w-full items-center justify-center gap-2 whitespace-normal rounded-full bg-gradient-to-r from-electric-500 to-growth-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-glow transition hover:shadow-glowGreen hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed sm:px-7;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 backdrop-blur px-7 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/10 hover:border-white/30 disabled:opacity-50;
+    @apply inline-flex max-w-full items-center justify-center gap-2 whitespace-normal rounded-full border border-white/15 bg-white/5 px-5 py-3 text-center text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/10 hover:border-white/30 disabled:opacity-50 sm:px-7;
   }
   .card {
-    @apply rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md;
+    @apply w-full min-w-0 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md;
   }
   .card-hover {
     @apply transition hover:border-white/20 hover:bg-white/[0.06];
   }
   .label-muted {
-    @apply text-xs uppercase tracking-[0.18em] text-white/50;
+    @apply break-words text-xs uppercase tracking-[0.12em] text-white/50 sm:tracking-[0.18em];
   }
   .input-field {
     @apply w-full rounded-xl border border-white/10 bg-navy-900/60 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-electric-400 focus:shadow-glow;
   }
   .pill {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80;
+    @apply inline-flex max-w-full items-center gap-1.5 break-words rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80;
   }
 }
 

@@ -8,11 +8,11 @@ const sectorLabel = (t, sector) => {
 
 export default function GosiPanel({ t, gosi }) {
   return (
-    <div className="card p-6 md:p-8 space-y-5">
-      <div>
+    <div className="card space-y-5 p-5 sm:p-6 md:p-8">
+      <div className="min-w-0">
         <span className="label-muted block">01b</span>
-        <h3 className="mt-1 text-xl font-semibold">{t.gosiTitle}</h3>
-        <p className="mt-2 max-w-xl text-sm text-white/55">{t.gosiHelper}</p>
+        <h3 className="mt-1 break-words text-xl font-semibold">{t.gosiTitle}</h3>
+        <p className="mt-2 max-w-xl break-words text-sm text-white/55">{t.gosiHelper}</p>
       </div>
 
       <AnimatePresence mode="wait">
@@ -63,8 +63,8 @@ function Cell({ label, value, tone }) {
       ? 'text-amber-300 border-amber-400/30'
       : 'text-growth-300 border-growth-500/20'
   return (
-    <div className={`rounded-xl border bg-white/[0.02] p-3 ${accent.split(' ')[1]}`}>
-      <div className={`text-base font-semibold ${accent.split(' ')[0]}`}>{value}</div>
+    <div className={`min-w-0 rounded-xl border bg-white/[0.02] p-3 ${accent.split(' ')[1]}`}>
+      <div className={`break-words text-base font-semibold ${accent.split(' ')[0]}`}>{value}</div>
       <div className="mt-1 text-[10px] uppercase tracking-wider text-white/40">{label}</div>
     </div>
   )

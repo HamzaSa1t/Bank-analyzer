@@ -20,9 +20,9 @@ export default function UserInputForm({ t, onSubmit, disabled, loading, employme
   }
 
   return (
-    <form onSubmit={submit} className="card p-6 md:p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">{t.formTitle}</h3>
+    <form onSubmit={submit} className="card space-y-6 p-5 sm:p-6 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="min-w-0 break-words text-xl font-semibold">{t.formTitle}</h3>
         <span className="label-muted">02</span>
       </div>
 
