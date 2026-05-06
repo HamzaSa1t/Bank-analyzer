@@ -35,7 +35,7 @@ export default function LLMReport({
   const cleanList = (xs) =>
     (Array.isArray(xs) ? xs : []).filter((x) => cleanText(typeof x === 'string' ? x : String(x)))
 
-  // Use the backend's risk_summary / decision_explanation as-is — overriding
+  // Use the backend's risk_summary / decision_explanation as-is overriding
   // them with hardRuleRejection causes the same rule sentence to appear in
   // both fields (and again as key_concerns[0]). hardRuleRejection is only a
   // fallback when the backend omits a sentence.

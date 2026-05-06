@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 
 const fmt = (n, digits = 0) => {
-  if (n === undefined || n === null || Number.isNaN(Number(n))) return '—'
+  if (n === undefined || n === null || Number.isNaN(Number(n))) return ''
   return Number(n).toLocaleString(undefined, {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,

@@ -76,7 +76,7 @@ export default function ResultsDashboard({ result, t }) {
     skipped: isHardRejected,
   })
 
-  // Detail / sub strings stay client-side — they read the displayed numbers
+  // Detail / sub strings stay client-side they read the displayed numbers
   // straight off the response and are never shown when the gate was skipped.
   const gates = [
     { label: t.gateHardRules, ...hardStatus },
@@ -382,7 +382,7 @@ function WhyBlock({ t, approved, failedRules, failedReasons, policyReason }) {
     )
   }
 
-  // Hard-rule rejection — single-sentence policy-rule message.
+  // Hard-rule rejection single-sentence policy-rule message.
   if (policyReason) {
     return (
       <motion.div
@@ -399,7 +399,7 @@ function WhyBlock({ t, approved, failedRules, failedReasons, policyReason }) {
     )
   }
 
-  // Model-decision rejection — bullet list of post-pricing failures.
+  // Model-decision rejection bullet list of post-pricing failures.
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}

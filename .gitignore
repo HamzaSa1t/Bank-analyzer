@@ -27,3 +27,18 @@ data/processed/*
 *.log
 .DS_Store
 Thumbs.db
+
+# Dev files & screenshots
+edits.md
+calaude.md
+image.png
+image copy.png
+image copy 2.png
+
+# Runtime logs
+bank_logs.xlsx
+server-backend*.log
+
+# Large / duplicate model files
+models/model.pkl
+models/oof_predictions.csv

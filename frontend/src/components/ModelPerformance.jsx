@@ -110,9 +110,12 @@ function HeroBlock({ t }) {
         href={MODEL_TRAINING_GITHUB_URL}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex rounded-lg border border-electric-400/30 bg-electric-500/10 px-3 py-2 text-sm font-semibold text-electric-300 transition hover:border-electric-300/60 hover:bg-electric-500/15"
+        className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-electric-400/45 bg-electric-500/15 px-5 py-2.5 text-center text-sm font-semibold text-electric-100 shadow-glow transition hover:border-electric-300/70 hover:bg-electric-500/20 hover:text-white"
       >
         {t.mpModelDetailsLink}
+        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M7 4l6 6-6 6" />
+        </svg>
       </motion.a>
       <motion.div
         variants={{ show: { transition: { staggerChildren: 0.12 } } }}
@@ -550,24 +553,6 @@ function PolicyMetricsBlock({ t }) {
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center text-xs leading-relaxed text-white/65">
             {t.mpPolicySharedNote}
           </div>
-
-          <motion.div
-            variants={fadeUp}
-            className="card relative overflow-hidden border border-amber-400/30 p-5"
-          >
-            <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-amber-500 blur-3xl opacity-15" />
-            <div className="relative flex min-w-0 items-start gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-amber-400/40 bg-amber-500/10 text-amber-300">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-                </svg>
-              </span>
-              <div className="min-w-0">
-                <h5 className="break-words text-sm font-semibold text-amber-200">{t.mpMetricInsightTitle}</h5>
-                <p className="mt-1 break-words text-xs leading-relaxed text-white/75">{t.mpMetricInsightBody}</p>
-              </div>
-            </div>
-          </motion.div>
         </>
       )}
     </motion.div>
@@ -622,7 +607,7 @@ function PolicyCard({ t, title, tone, values, strategyHeading, strategyBullets, 
             <div key={m.key} className="min-w-0 space-y-1 rounded-xl border border-white/10 bg-white/[0.02] p-3">
               <div className={`break-words text-2xl font-extrabold tracking-tight ${styles.text}`}>
                 {m.value == null
-                  ? <span className="text-white/30">—</span>
+                  ? <span className="text-white/30">...</span>
                   : `${(m.value * 100).toFixed(1)}%`}
               </div>
               <p className="break-words text-xs font-semibold text-white/85">{m.label}</p>
@@ -747,7 +732,7 @@ function ThresholdsBar({ t }) {
 // ---------- Section 3c: Calibration -------------------------------------
 
 function CalibrationLine({ t }) {
-  // Source: src/calibration_check.py — OOF reliability table from
+  // Source: src/calibration_check.py OOF reliability table from
   // models/calibration_buckets.json (served by /calibration). Bin-mean predicted
   // PD vs empirical default rate, in percent.
   const FALLBACK = [
@@ -799,7 +784,7 @@ function CalibrationLine({ t }) {
 // ---------- Section 4: Top decision drivers -----------------------------
 
 function DriversBar({ t }) {
-  // Source: src/feature_importance.py — top features by SHAP mean |value| on a
+  // Source: src/feature_importance.py top features by SHAP mean |value| on a
   // 5,000-row stratified sample, served from /feature-importance.
   const FALLBACK = [
     { feat: t.mpDriverBureauAvg,    shap: 0.573, impact: 'good', desc: t.mpDriverBureauAvgDesc },
@@ -816,6 +801,7 @@ function DriversBar({ t }) {
   const [drivers, setDrivers] = useState(FALLBACK)
   useEffect(() => {
     let cancelled = false
+    setDrivers(FALLBACK)
     fetchFeatureImportance()
       .then((res) => {
         if (cancelled || !res?.drivers?.length) return
@@ -829,9 +815,12 @@ function DriversBar({ t }) {
       })
       .catch(() => { /* keep fallback */ })
     return () => { cancelled = true }
-  }, [])
+  }, [t])
   const data = [...drivers].reverse() // recharts horizontal bars: top of chart = last item
   const examples = [t.mpDriversExample1, t.mpDriversExample2, t.mpDriversExample3]
+  const isArabic = t.mpDriversTitle === 'ما الذي ينظر إليه النموذج أكثر'
+  const yAxisWidth = isArabic ? 280 : 170
+  const chartMargin = { top: 8, right: 24, left: 8, bottom: 8 }
   return (
     <div className="space-y-8">
       <SectionHeader eyebrow={t.mpDriversEyebrow} title={t.mpDriversTitle} />
@@ -863,13 +852,42 @@ function DriversBar({ t }) {
         className="grid gap-6 lg:grid-cols-5"
       >
         <div className="card p-5 sm:p-6 lg:col-span-3">
-          <div className="overflow-x-auto pb-1">
-          <div className="h-[420px] min-w-[560px]">
+          <div className="overflow-x-auto pb-1" dir="ltr" style={{ direction: 'ltr' }}>
+          <div className="h-[440px]" style={{ minWidth: isArabic ? '960px' : '880px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ top: 5, right: 18, left: 18, bottom: 0 }}>
+              <BarChart
+                data={data}
+                layout="vertical"
+                margin={chartMargin}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" horizontal={false} />
                 <XAxis type="number" stroke="rgba(255,255,255,0.5)" fontSize={11} />
-                <YAxis type="category" dataKey="feat" stroke="rgba(255,255,255,0.7)" fontSize={11} width={170} />
+                <YAxis
+                  type="category"
+                  dataKey="feat"
+                  stroke="rgba(255,255,255,0.7)"
+                  fontSize={isArabic ? 12 : 11}
+                  width={yAxisWidth}
+                  interval={0}
+                  orientation="left"
+                  tick={(props) => {
+                    const { x, y, payload } = props
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor="end"
+                        dominantBaseline="central"
+                        fill="rgba(255,255,255,0.7)"
+                        fontSize={isArabic ? 12 : 11}
+                        dx={-6}
+                        direction="ltr"
+                      >
+                        {payload.value}
+                      </text>
+                    )
+                  }}
+                />
                 <Tooltip contentStyle={{ background: '#0b1230', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }} formatter={(v) => v.toFixed(3)} />
                 <Bar dataKey="shap" radius={[0, 6, 6, 0]} animationDuration={1400}>
                   {data.map((d, i) => (

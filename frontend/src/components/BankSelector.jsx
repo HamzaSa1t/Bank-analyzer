@@ -42,15 +42,17 @@ export default function BankSelector({ t, value, onSelect }) {
       >
         {t.pickBankSub}
       </motion.p>
-      <motion.p
+      <motion.div
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="mb-8 mt-3 max-w-2xl break-words text-sm font-semibold text-electric-400"
+        className="mb-8 mt-4"
       >
-        {t.pickBankCta}
-      </motion.p>
+        <span className="inline-flex max-w-full items-center justify-center rounded-full border border-electric-400/40 bg-electric-500/12 px-5 py-2.5 text-center text-sm font-semibold text-electric-200 shadow-glow transition">
+          {t.pickBankCta}
+        </span>
+      </motion.div>
 
       <div className="grid gap-5 md:grid-cols-2" id="bank-cards">
         {banks.map((b, i) => {

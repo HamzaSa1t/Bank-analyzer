@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import * as api from '../lib/api'
 
 // preprocessing.py drops DAYS_EMPLOYED but keeps YEARS_EMPLOYED (already in
-// years, with Home Credit's 365243 sentinel mapped to 0.0) — read that column.
+// years, with Home Credit's 365243 sentinel mapped to 0.0) read that column.
 const yearsFromYearsEmployed = (yearsEmployed) => {
   const y = Number(yearsEmployed)
   if (!Number.isFinite(y)) return 0
