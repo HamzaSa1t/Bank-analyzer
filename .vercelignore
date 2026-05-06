@@ -1,16 +1,17 @@
 # Backend lives on Railway — keep it out of the Vercel deployment.
-api/
-src/
-models/
-data/
-notebooks/
-tests/
-__pycache__/
-*.py
+# Patterns are anchored with leading "/" so they only match at the
+# repo root and never accidentally exclude frontend/src, etc.
+/api/
+/src/
+/models/
+/data/
+/notebooks/
+/tests/
+/__pycache__/
+/requirements.txt
+/railway.json
+/bank_logs.xlsx
+/image.png
 *.pyc
 *.ipynb
-requirements.txt
-railway.json
-bank_logs.xlsx
-image.png
 *.log
