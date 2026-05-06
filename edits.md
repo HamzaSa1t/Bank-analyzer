@@ -1,180 +1,113 @@
-You are Codex working in my project repo. Do these tasks carefully.
+remove these text from the website (in arabic & in english):
+ "الشفافية"
 
-## 1. Add helpful code comments
+remove this whole box and text ( in arabic & en)
+ملاحظة مهمة
+الأداء القوي للنموذج لا يعني قرارات مثالية. في الواقع، تُستخدم هذه المقاييس إلى جانب التسعير والربحية وسياسات البنك لاتخاذ القرار النهائي.
 
-Add concise comments to important parts of the codebase, especially:
 
-* ML training/evaluation logic
-* inference / prediction flow
-* pricing and expected-profit logic
-* hard-rule checks
-* LLM/report generation
-* main frontend result sections
+remove all the "  — " from any text in the website in both languages 
 
-Rules:
+2- 
 
-* Comments should explain WHY the code exists, not obvious syntax.
-* Do not over-comment every line.
-* Keep comments professional and short.
-* Do not change app behavior.
+these texts have a problem: "جنس المتقدم
+عمر المتقدم
+عمر السيارة
+مدة التوظيف
+تاريخ المدفوعات المتأخرة
+القسط الشهري
+أعلى ضغط دين على الائتمان الحالي
+المبلغ الممول مقارنة بقيمة الشيء
+ضغط القسط الشهري
+قوة السجل الائتماني العامة"
 
----
+first: in the english version they appear in arabic instead of english:
+second: the bars in the chart in the arabic version covers the text
 
-## 2. Create README file
+also this text: "قوة السجل الائتماني العامة
+ملخص عام لقوة السجل الائتماني وسلوك السداد السابق.
 
-Create or update `README.md`.
+ضغط القسط الشهري
+القسط الشهري كنسبة من إجمالي القرض — النسب الأعلى تعني فترة سداد أقصر وعبء شهري أكبر.
 
-Include:
+المبلغ الممول مقارنة بقيمة الشيء
+سعر السلعة الممولة كنسبة من مبلغ القرض — كلما اقتربت من 1 كان مساهمة المتقدّم في الدفعة الأولى أقل.
 
-* Project overview
-* Tech stack
-* How the system works
-* ML model explanation
-* Bank simulation / decision logic
-* How to run backend
-* How to run frontend
-* Environment variables
-* Model performance summary
-* Disclaimer that this is a simulation, not a real lending system
+أعلى ضغط دين على الائتمان الحالي
+أعلى نسبة دين مستحق إلى إجمالي القرض عبر حسابات الجهات الائتمانية — مؤشر على ضغط الديون.
 
-Important:
+القسط الشهري
+القسط الشهري — الأقساط الأكبر ترفع احتمال التعثّر.
 
-* Do NOT commit README or any changes.
-* Just leave the file modified in the working tree.
+تاريخ المدفوعات المتأخرة
+نسبة الأقساط السابقة المسدّدة متأخرة — أقوى مؤشر سلوكي للمخاطر.
 
----
+مدة التوظيف
+سنوات العمل لدى صاحب العمل الحالي — المدة الأطول ترتبط بدخل أكثر استقرارًا.
 
-## 3. Add “Check model details” link on website
+عمر السيارة
+عمر السيارة المملوكة بالسنوات — يرتبط بالاستقرار وعمر الأصول.
 
-Find the text on the website:
+عمر المتقدم
+عمر المتقدّم — يرتبط ارتباطًا غير خطي بالاستقرار المالي.
 
-```text
-Uses the XGBoost algorithm to train a credit-risk model on large-scale real-world loan data (Home Credit dataset).
-```
+جنس المتقدم
+جنس المتقدّم (ذكر) — يستخدمه النموذج كميزة لكنه يستلزم مراجعة لاعتبارات العدالة." is not translated to english in the english version of the website
 
-Under it, add a small link/button:
+3- make this "اختر بنكًا أدناه للمتابعة." look more like a botton in both languages 
 
-```text
-Check the model details
-```
 
-Arabic:
+4- 3- make this "عرض تفاصيل النموذج" look more like a botton in both languages 
 
-```text
-عرض تفاصيل النموذج
-```
+5- Before making any changes, create a git commit for the current state.
 
-When clicked, it should open my GitHub model training file.
+I want to redesign the animated background lines in the hero section.
 
-Use a constant for the URL, for example:
+Current issue:
+The background waves look too abstract/sine-wave-like. I want them to feel more like real stock market / trading charts while still being clean and futuristic.
 
-```js
-const MODEL_TRAINING_GITHUB_URL = "PUT_GITHUB_TRAINING_FILE_URL_HERE";
-```
+Requirements:
+1. Replace the smooth wave animation with animated financial-chart style lines.
+2. The chart lines should:
+   - look like stock/market movement
+   - move continuously in an infinite loop
+   - stay connected endlessly across the screen
+   - feel dynamic and realistic, not random waves
+3. IMPORTANT:
+   - Keep it minimal
+   - ONLY lines
+   - NO candlesticks
+   - NO numbers
+   - NO axis labels
+   - NO prices
+   - NO dots/points
+   - NO tooltips
+   - NO chart UI elements
+4. The animation should feel:
+   - premium
+   - cinematic
+   - fintech/AI style
+   - smooth and elegant
+5. Use multiple layered lines with different:
+   - opacity
+   - speed
+   - amplitude/volatility
+   to create depth.
+6. Lines should occasionally:
+   - trend upward/downward
+   - consolidate
+   - spike slightly
+   similar to real stock charts.
+7. Preserve the current dark futuristic theme and neon colors.
+8. Animation must be GPU-friendly and smooth on mobile.
+9. Do NOT break the hero layout or text positioning.
+10. Make the animation responsive across desktop and mobile.
 
-If you can infer the actual GitHub URL from project config/package/repo remote, use it. Otherwise leave a clear placeholder and add a TODO comment.
-
-Open the link in a new tab:
-
-```jsx
-target="_blank"
-rel="noreferrer"
-```
-
----
-
-## 4. Make model training file show performance output clearly on GitHub
+Preferred implementation:
+- SVG paths or Canvas animation
+- smooth interpolation between points
+- seamless looping with no visible reset
 
 Goal:
-When someone opens the model training file on GitHub, they should immediately see the model performance output clearly.
-
-Find the model training file, likely:
-
-```text
-src/train.py
-```
-
-Add a large comment block near the top or bottom containing the latest performance output exactly and clearly.
-
-Use a format like:
-
-```python
-"""
-MODEL PERFORMANCE OUTPUT
-
-Metric summary:
-| Metric | Result |
-|---|---:|
-| ROC-AUC / OOF AUC | 0.7868 |
-| Mean validation AUC | 0.7868 |
-| Validation AUC std | 0.0035 |
-| Mean train AUC | 0.8334 |
-| Train-validation gap | 0.0466 |
-| PR-AUC | 0.2812 |
-| Brier score | 0.0659 |
-
-Dataset / training:
-| Metric | Result |
-|---|---:|
-| Mean best iteration | 1300 |
-| Total rows | 307,511 |
-| Positive rate | 0.0807 |
-| Feature count | 289 |
-
-Per-fold results:
-| Fold | Validation AUC | Train AUC | Best Iteration |
-|---:|---:|---:|---:|
-| 1 | 0.7822 | 0.8265 | 1022 |
-| 2 | 0.7916 | 0.8306 | 1270 |
-| 3 | 0.7859 | 0.8366 | 1405 |
-| 4 | 0.7900 | 0.8445 | 1702 |
-| 5 | 0.7842 | 0.8287 | 1100 |
-
-Threshold results:
-| Threshold | Precision | Recall | F1 | Approval Rate | Confusion Matrix |
-|---|---:|---:|---:|---:|---|
-| Conservative 0.05 | 0.1415 | 0.8441 | 0.2423 | 0.5183 | TN=155511, FP=127175, FN=3869, TP=20956 |
-| Aggressive 0.15 | 0.2618 | 0.4744 | 0.3374 | 0.8537 | TN=249481, FP=33205, FN=13049, TP=11776 |
-
-Notes:
-- Default threshold 0.5 is intentionally omitted because it is not meaningful for this imbalanced credit-risk use case.
-- The model is used for risk ranking / PD estimation.
-- Final loan decisions are made by the bank simulation using risk, pricing, profitability, and policy gates.
-"""
-```
-
-Important:
-
-* Do not add the default threshold 0.5 output.
-* Keep Conservative and Aggressive metrics.
-* Do not change training behavior unless needed to keep comments/doc output clean.
-
----
-
-## 5. Verify
-
-Run formatting/build checks if available:
-
-```bash
-git status
-```
-
-If frontend build exists:
-
-```bash
-cd frontend
-npm run build
-```
-
-If Python smoke tests exist, run them.
-
-Return a short summary:
-
-* comments added
-* README created/updated
-* GitHub link added or placeholder left
-* training file performance output added
-* tests/build status
-
-Do NOT commit the changes.
+Make the background feel like an infinite live AI-powered financial market chart instead of decorative waves.
 
