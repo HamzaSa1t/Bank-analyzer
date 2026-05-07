@@ -52,31 +52,40 @@ export default function ResultsDashboard({ result, t }) {
     return fallback
   }
 
+  // Build fallback gate status only when both the value AND threshold are
+  // present. If a threshold is missing (e.g. backend is on an older deploy
+  // that doesn't emit min_score / max_pd_allowed), mark the gate as skipped
+  // so we render "—" instead of contradicting the backend's final decision
+  // with a "Fail" computed from undefined inputs.
+  const numericFallback = (value, threshold, predicate) => {
+    if (isHardRejected) return { pass: false, skipped: true }
+    if (!isFiniteNumber(value) || !isFiniteNumber(threshold)) {
+      return { pass: false, skipped: true }
+    }
+    return { pass: predicate(Number(value), Number(threshold)), skipped: false }
+  }
+
   const hardStatus = gateStatus('hard_rules', { pass: !isHardRejected, skipped: false })
-  const pdStatus = gateStatus('pd_limit', {
-    pass:
-      !isHardRejected &&
-      isFiniteNumber(modelPd) &&
-      isFiniteNumber(maxPd) &&
-      Number(modelPd) <= Number(maxPd),
-    skipped: isHardRejected,
-  })
-  const scoreStatus = gateStatus('credit_score', {
-    pass:
-      !isHardRejected &&
-      isFiniteNumber(creditScore) &&
-      isFiniteNumber(minScore) &&
-      Number(creditScore) >= Number(minScore),
-    skipped: isHardRejected,
-  })
-  const dbrStatus = gateStatus('final_dbr', {
-    pass: !isHardRejected && isFiniteNumber(finalDbr) && Number(finalDbr) <= SAMA_LIMIT,
-    skipped: isHardRejected,
-  })
-  const profitStatus = gateStatus('profitability', {
-    pass: !isHardRejected && isFiniteNumber(profit) && Number(profit) > 0,
-    skipped: isHardRejected,
-  })
+  const pdStatus = gateStatus(
+    'pd_limit',
+    numericFallback(modelPd, maxPd, (v, lim) => v <= lim),
+  )
+  const scoreStatus = gateStatus(
+    'credit_score',
+    numericFallback(creditScore, minScore, (v, lim) => v >= lim),
+  )
+  const dbrStatus = gateStatus(
+    'final_dbr',
+    numericFallback(finalDbr, SAMA_LIMIT, (v, lim) => v <= lim),
+  )
+  // Profitability has no separate threshold — the rule is profit > 0. Treat
+  // a missing profit value as skipped (unknown), not failing.
+  const profitStatus = gateStatus(
+    'profitability',
+    isHardRejected || !isFiniteNumber(profit)
+      ? { pass: false, skipped: true }
+      : { pass: Number(profit) > 0, skipped: false },
+  )
 
   // Detail / sub strings stay client-side they read the displayed numbers
   // straight off the response and are never shown when the gate was skipped.
