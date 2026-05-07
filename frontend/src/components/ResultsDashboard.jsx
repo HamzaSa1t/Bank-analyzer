@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import CreditScoreGauge from './CreditScoreGauge.jsx'
 import ShapPlot from './ShapPlot.jsx'
 import LLMReport from './LLMReport.jsx'
+import { isFiniteNumber, fmtPct, fmtSar, SAMA_LIMIT } from '../lib/formatters.js'
 
 const riskMap = {
   HIGH: { key: 'riskHigh', cls: 'text-red-300 border-red-400/30' },
@@ -9,15 +11,15 @@ const riskMap = {
   LOW: { key: 'riskLow', cls: 'text-growth-300 border-growth-500/30' },
 }
 
-const isFiniteNumber = (n) => n !== null && n !== undefined && Number.isFinite(Number(n))
-const fmtPct = (n, dp = 1) =>
-  isFiniteNumber(n) ? `${(Number(n) * 100).toFixed(dp)}%` : 'Unavailable'
-const fmtSar = (n) =>
-  isFiniteNumber(n)
-    ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(n))
-    : 'Unavailable'
-
-const SAMA_LIMIT = 0.3333
+// Backend response keys that callers expect to be present in the post-ML
+// path. Used for an undefined-vs-null check so we can distinguish a deploy
+// mismatch (field missing entirely) from a hard-rule rejection (field
+// intentionally null).
+const POST_ML_FIELDS = [
+  'model_pd', 'max_pd_allowed', 'pd_threshold', 'min_score', 'credit_score',
+  'final_dbr', 'offered_interest_rate', 'final_monthly_payment',
+  'expected_revenue', 'expected_loss', 'expected_profit',
+]
 
 export default function ResultsDashboard({ result, t }) {
   if (!result) return null
@@ -109,6 +111,31 @@ export default function ResultsDashboard({ result, t }) {
     ? failedReasons[0] || result.hard_rule_rejection
     : null
 
+  // Consistency check: the backend already enforces decision/gates agreement
+  // (api/services.py::enforce_decision_consistency). Warn loudly in DevTools
+  // if a deploy ever drifts so we catch it without silently mis-rendering.
+  useEffect(() => {
+    if (approved && gates.some((g) => !g.skipped && !g.pass)) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[decision-consistency] backend reported APPROVED but a gate failed',
+        { decision: result.decision, gates, failed_rules: failedRules },
+      )
+    }
+  }, [approved, gates, failedRules, result.decision])
+
+  // Missing-field observability: undefined (vs null) means the response is
+  // partial — usually a deploy mismatch where Railway is older than the
+  // local code. Null is intentional (hard-rule rejection nulls pricing).
+  useEffect(() => {
+    if (isHardRejected) return
+    const missing = POST_ML_FIELDS.filter((k) => result[k] === undefined)
+    if (missing.length) {
+      // eslint-disable-next-line no-console
+      console.warn('[result] backend response missing fields:', missing)
+    }
+  }, [result, isHardRejected])
+
   return (
     <motion.section
       id="report"
@@ -117,6 +144,8 @@ export default function ResultsDashboard({ result, t }) {
       transition={{ duration: 0.6 }}
       className="space-y-6 scroll-mt-20"
     >
+      <DecisionBanner approved={approved} t={t} />
+
       <h2 className="break-words text-2xl font-bold sm:text-3xl">
         <span className="bg-gradient-to-r from-white to-growth-300 bg-clip-text text-transparent">
           {t.resultsTitle}
@@ -423,6 +452,49 @@ function WhyBlock({ t, approved, failedRules, failedReasons, policyReason }) {
           </ul>
         </>
       )}
+    </motion.div>
+  )
+}
+
+function DecisionBanner({ approved, t }) {
+  const tone = approved
+    ? 'border-growth-500/40 bg-gradient-to-r from-growth-500/15 via-growth-500/10 to-growth-500/5 text-growth-100'
+    : 'border-red-500/40 bg-gradient-to-r from-red-500/15 via-red-500/10 to-red-500/5 text-red-100'
+  const labelTone = approved ? 'text-growth-300' : 'text-red-300'
+  const label = approved ? t.decisionApproved : t.decisionRejected
+  const subtitle = approved
+    ? t.decisionApprovedSubtitle
+    : t.decisionRejectedSubtitle
+  const icon = approved ? (
+    <svg viewBox="0 0 24 24" className="h-7 w-7 sm:h-9 sm:w-9" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 24 24" className="h-7 w-7 sm:h-9 sm:w-9" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  )
+
+  return (
+    <motion.div
+      role="status"
+      aria-live="polite"
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className={`flex flex-col gap-3 rounded-2xl border px-5 py-5 sm:flex-row sm:items-center sm:gap-5 sm:px-7 sm:py-6 ${tone}`}
+    >
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 sm:h-14 sm:w-14 ${labelTone}`}>
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <div className={`break-words text-3xl font-extrabold uppercase tracking-wide sm:text-4xl ${labelTone}`}>
+          {label}
+        </div>
+        {subtitle && (
+          <p className="mt-1 break-words text-sm text-white/75">{subtitle}</p>
+        )}
+      </div>
     </motion.div>
   )
 }
