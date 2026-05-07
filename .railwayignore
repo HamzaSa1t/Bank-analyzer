@@ -1,0 +1,73 @@
+# Patterns excluded from `railway up` uploads.
+# Backend lives at the repo root (api/, src/, models/, requirements.txt).
+# Goal: keep upload <50 MB. The full Home Credit CSVs (>1.7 GB) and frontend
+# build artifacts must not ship to Railway.
+
+# ---------- Frontend (Vercel deploys this, not Railway) ------------------
+frontend/
+
+# ---------- Build / dev tooling ------------------------------------------
+.git/
+.github/
+.vscode/
+.idea/
+.claude/
+.railway/
+.deepeval/
+notebooks/
+tests/
+
+# ---------- Python caches & virtualenvs ----------------------------------
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+myenv/
+
+# ---------- Secrets ------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ---------- Data: keep only the runtime sample ---------------------------
+# Exclude everything in /data EXCEPT processed/features_sample.csv (20 MB),
+# which src/data_loader.py reads on startup.
+/data/*
+!/data/processed/
+/data/processed/*
+!/data/processed/features_sample.csv
+
+# ---------- Models: keep only the files inference / endpoints need -------
+# Inference reads model.pkl, feature_cols.pkl, median_vals.pkl.
+# Endpoints read metrics.json, calibration_buckets.json, feature_importance.json.
+# Drop the big eval artifacts (PNGs, oof_predictions, xgboost_model.pkl duplicate).
+models/calibration_curve.png
+models/fairness_report.png
+models/importance_permutation.png
+models/importance_shap_bar.png
+models/importance_shap_beeswarm.png
+models/importance_xgb.png
+models/oof_predictions.csv
+models/xgboost_model.pkl
+models/categorical_columns.json
+models/feature_order.json
+
+# ---------- Local logs / OS junk -----------------------------------------
+*.log
+bank_logs.xlsx
+.DS_Store
+Thumbs.db
+
+# ---------- Project files not needed at runtime --------------------------
+edits.md
+calaude.md
+image*.png
+README.md
+vercel.json
+.vercelignore
