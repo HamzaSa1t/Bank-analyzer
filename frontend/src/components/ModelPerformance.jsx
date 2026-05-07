@@ -43,6 +43,33 @@ function useMetricsSummary() {
   return summary
 }
 
+// Tracks viewport width so charts can drop forced min-widths and shrink axis
+// labels on phones. SSR-safe: starts at desktop width, syncs on first effect.
+function useWindowWidth() {
+  const [width, setWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1280,
+  )
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onResize = () => setWidth(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    onResize()
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  return width
+}
+
+const IMPACT_COLORS = {
+  good: '#34e89f',
+  bad: '#ef4444',
+  neutral: '#9ca3af',
+}
+const IMPACT_DOT_CLS = {
+  good: 'bg-growth-400',
+  bad: 'bg-red-400',
+  neutral: 'bg-white/40',
+}
+
 // ---------- shared bits -------------------------------------------------
 
 const fadeUp = {
@@ -706,8 +733,8 @@ function ThresholdsBar({ t }) {
       className="card space-y-4 p-5 sm:p-6"
     >
       <h4 className="break-words text-sm font-semibold text-white/80">{t.mpThresholdsTitle}</h4>
-      <div className="overflow-x-auto pb-1">
-        <div className="h-56 min-w-[320px]">
+      <div className="pb-1">
+        <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
@@ -761,8 +788,8 @@ function CalibrationLine({ t }) {
       className="card space-y-4 p-5 sm:p-6"
     >
       <h4 className="break-words text-sm font-semibold text-white/80">{t.mpCalibTitle}</h4>
-      <div className="overflow-x-auto pb-1">
-        <div className="h-64 min-w-[420px]">
+      <div className="pb-1">
+        <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={buckets} margin={{ top: 5, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
@@ -808,7 +835,7 @@ function DriversBar({ t }) {
         const mapped = res.drivers.map((d) => ({
           feat: prettyFeature(d.feature, t),
           shap: Number(d.shap_mean_abs ?? 0),
-          impact: d.impact === 'good' || d.impact === 'bad' ? d.impact : 'bad',
+          impact: ['good', 'bad', 'neutral'].includes(d.impact) ? d.impact : 'neutral',
           desc: (d.description_key && t[d.description_key]) || prettyFeature(d.feature, t),
         }))
         setDrivers(mapped)
@@ -819,8 +846,21 @@ function DriversBar({ t }) {
   const data = [...drivers].reverse() // recharts horizontal bars: top of chart = last item
   const examples = [t.mpDriversExample1, t.mpDriversExample2, t.mpDriversExample3]
   const isArabic = t.mpDriversTitle === 'ما الذي ينظر إليه النموذج أكثر'
-  const yAxisWidth = isArabic ? 280 : 170
-  const chartMargin = { top: 8, right: 24, left: 8, bottom: 8 }
+  const width = useWindowWidth()
+  const isMobile = width < 768
+  // On mobile, label width and font shrink so bars get the room they need.
+  const yAxisWidth = isMobile ? (isArabic ? 130 : 110) : isArabic ? 280 : 170
+  const tickFontSize = isMobile ? 10 : isArabic ? 12 : 11
+  const chartMargin = isMobile
+    ? { top: 4, right: 12, left: 4, bottom: 4 }
+    : { top: 8, right: 24, left: 8, bottom: 8 }
+  // Height grows with bar count; clamped so it never collapses or runs away.
+  const chartHeight = Math.min(600, Math.max(360, drivers.length * 36 + 80))
+  const truncateLabel = (s) => {
+    if (typeof s !== 'string') return s
+    const limit = isMobile ? 22 : 60
+    return s.length > limit ? `${s.slice(0, limit - 1)}…` : s
+  }
   return (
     <div className="space-y-8">
       <SectionHeader eyebrow={t.mpDriversEyebrow} title={t.mpDriversTitle} />
@@ -852,8 +892,8 @@ function DriversBar({ t }) {
         className="grid gap-6 lg:grid-cols-5"
       >
         <div className="card p-5 sm:p-6 lg:col-span-3">
-          <div className="overflow-x-auto pb-1" dir="ltr" style={{ direction: 'ltr' }}>
-          <div className="h-[440px]" style={{ minWidth: isArabic ? '960px' : '880px' }}>
+          <div className="pb-1" dir="ltr" style={{ direction: 'ltr' }}>
+          <div className="w-full" style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data}
@@ -861,12 +901,12 @@ function DriversBar({ t }) {
                 margin={chartMargin}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" horizontal={false} />
-                <XAxis type="number" stroke="rgba(255,255,255,0.5)" fontSize={11} />
+                <XAxis type="number" stroke="rgba(255,255,255,0.5)" fontSize={isMobile ? 10 : 11} />
                 <YAxis
                   type="category"
                   dataKey="feat"
                   stroke="rgba(255,255,255,0.7)"
-                  fontSize={isArabic ? 12 : 11}
+                  fontSize={tickFontSize}
                   width={yAxisWidth}
                   interval={0}
                   orientation="left"
@@ -879,11 +919,11 @@ function DriversBar({ t }) {
                         textAnchor="end"
                         dominantBaseline="central"
                         fill="rgba(255,255,255,0.7)"
-                        fontSize={isArabic ? 12 : 11}
+                        fontSize={tickFontSize}
                         dx={-6}
                         direction="ltr"
                       >
-                        {payload.value}
+                        {truncateLabel(payload.value)}
                       </text>
                     )
                   }}
@@ -891,7 +931,7 @@ function DriversBar({ t }) {
                 <Tooltip contentStyle={{ background: '#0b1230', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }} formatter={(v) => v.toFixed(3)} />
                 <Bar dataKey="shap" radius={[0, 6, 6, 0]} animationDuration={1400}>
                   {data.map((d, i) => (
-                    <Cell key={i} fill={d.impact === 'good' ? '#34e89f' : '#ef4444'} />
+                    <Cell key={i} fill={IMPACT_COLORS[d.impact] ?? IMPACT_COLORS.neutral} />
                   ))}
                 </Bar>
               </BarChart>
@@ -901,6 +941,7 @@ function DriversBar({ t }) {
           <div className="mt-3 flex flex-wrap items-center justify-end gap-4 text-[11px]">
             <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-growth-400" />{t.mpImpactGood}</span>
             <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-400" />{t.mpImpactBad}</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-white/40" />{t.mpImpactNeutral}</span>
           </div>
         </div>
         <ul className="space-y-2 lg:col-span-2">
@@ -910,7 +951,7 @@ function DriversBar({ t }) {
               variants={fadeUp}
               className="card flex min-w-0 items-start gap-3 p-3"
             >
-              <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${d.impact === 'good' ? 'bg-growth-400' : 'bg-red-400'}`} />
+              <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${IMPACT_DOT_CLS[d.impact] ?? IMPACT_DOT_CLS.neutral}`} />
               <div className="min-w-0">
                 <div className="break-words text-sm font-semibold text-white/90">{d.feat}</div>
                 <p className="break-words text-xs leading-relaxed text-white/55">{d.desc}</p>

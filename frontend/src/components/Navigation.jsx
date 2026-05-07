@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 export default function Navigation({ t, lang, onLangChange }) {
@@ -10,8 +11,29 @@ export default function Navigation({ t, lang, onLangChange }) {
     { key: 'navContact', kind: 'anchor', id: 'contact' },
   ]
 
+  const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
+  const headerRef = useRef(null)
+
+  useEffect(() => { setMenuOpen(false) }, [location.pathname])
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false) }
+    const onClick = (e) => {
+      if (headerRef.current && !headerRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onClick)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onClick)
+    }
+  }, [menuOpen])
+
   return (
     <motion.header
+      ref={headerRef}
       initial={{ y: -30, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -44,19 +66,72 @@ export default function Navigation({ t, lang, onLangChange }) {
             {lang === 'ar' ? 'EN' : 'AR'}
           </button>
           <CtaButton label={t.getStarted} />
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="pill grid h-9 w-9 place-items-center md:hidden hover:bg-white/10"
+            aria-label={menuOpen ? (t.menuClose || 'Close menu') : (t.menuOpen || 'Open menu')}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav-panel"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              {menuOpen ? (
+                <path d="M6 6l12 12M18 6L6 18" />
+              ) : (
+                <>
+                  <path d="M4 7h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 17h16" />
+                </>
+              )}
+            </svg>
+          </button>
         </div>
       </div>
+
+      <AnimatePresence initial={false}>
+        {menuOpen && (
+          <motion.nav
+            id="mobile-nav-panel"
+            key="mobile-nav-panel"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="md:hidden overflow-hidden border-t border-white/5 bg-navy-950/70 backdrop-blur-md"
+          >
+            <ul className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 sm:px-6">
+              {items.map(it => (
+                <li key={it.key}>
+                  <NavItem
+                    item={it}
+                    label={t[it.key]}
+                    onNavigate={() => setMenuOpen(false)}
+                    mobile
+                  />
+                </li>
+              ))}
+            </ul>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </motion.header>
   )
 }
 
-function NavItem({ item, label }) {
+function NavItem({ item, label, onNavigate, mobile }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const className = 'text-[15px] text-white/70 transition hover:text-white'
+  const className = mobile
+    ? 'block w-full rounded-lg px-3 py-2.5 text-base text-white/85 transition hover:bg-white/5 hover:text-white'
+    : 'text-[15px] text-white/70 transition hover:text-white'
+
+  const afterClick = () => { if (typeof onNavigate === 'function') onNavigate() }
 
   if (item.kind === 'route') {
-    return <Link to={item.to} className={className}>{label}</Link>
+    return (
+      <Link to={item.to} className={className} onClick={afterClick}>{label}</Link>
+    )
   }
 
   // Cross-route anchor: navigate to a different route, then scroll to a section there.
@@ -72,6 +147,7 @@ function NavItem({ item, label }) {
         navigate(item.to)
         requestAnimationFrame(() => { setTimeout(scroll, 80) })
       }
+      afterClick()
     }
     return (
       <a href={`${item.to}#${item.id}`} onClick={handleClick} className={className}>
@@ -87,13 +163,13 @@ function NavItem({ item, label }) {
       document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })
     } else {
       navigate('/')
-      // Wait one tick for the route to mount, then scroll.
       requestAnimationFrame(() => {
         setTimeout(() => {
           document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })
         }, 80)
       })
     }
+    afterClick()
   }
 
   return (
