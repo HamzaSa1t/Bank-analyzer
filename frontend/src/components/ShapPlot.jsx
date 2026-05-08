@@ -13,8 +13,13 @@ export default function ShapPlot({ top5, t }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex min-w-0 items-center justify-between">
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <h4 className="break-words text-sm font-semibold text-white/80">{t.shapTitle}</h4>
+        {t.shapSubtitle && (
+          <span className="break-words text-[11px] font-normal text-white/45">
+            ({t.shapSubtitle})
+          </span>
+        )}
       </div>
 
       {items.length > 0 && (
@@ -43,7 +48,9 @@ export default function ShapPlot({ top5, t }) {
               ? t.driverHurting
               : t.driverHelping
 
-            const arrow = isNeutral ? '·' : raisesPd ? '↑' : '↓'
+            // Hurting (raises PD) → ↓ red: drags approval down.
+            // Helping (lowers PD)  → ↑ green: lifts approval up.
+            const arrow = isNeutral ? '·' : raisesPd ? '↓' : '↑'
             const pct = total > 0 ? Math.round((magnitude / total) * 100) : 0
 
             return (

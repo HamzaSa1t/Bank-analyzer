@@ -20,7 +20,7 @@ body {
 }
 
 .stock-chart-scroll {
-  animation: stock-chart-scroll 26s linear infinite;
+  animation: stock-chart-scroll 44s linear infinite;
   will-change: transform;
 }
 

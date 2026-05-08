@@ -73,10 +73,10 @@ function pathFor(series) {
 }
 
 const LINE_CONFIGS = [
-  { color: '#34e89f', width: 2.2, opacity: 0.86, seed: 11, volatility: 4.9, trendBias: 1.8, spike: 9, duration: 26 },
-  { color: '#3b82ff', width: 1.7, opacity: 0.58, seed: 23, volatility: 3.6, trendBias: 1.4, spike: 7, duration: 34 },
-  { color: '#7afcb1', width: 1.2, opacity: 0.34, seed: 37, volatility: 2.9, trendBias: 1.0, spike: 5, duration: 44 },
-  { color: '#f59e0b', width: 1.1, opacity: 0.14, seed: 51, volatility: 5.8, trendBias: 2.2, spike: 11, duration: 31 },
+  { color: '#34e89f', width: 2.2, opacity: 0.86, seed: 11, volatility: 4.9, trendBias: 1.8, spike: 9, duration: 44 },
+  { color: '#3b82ff', width: 1.7, opacity: 0.58, seed: 23, volatility: 3.6, trendBias: 1.4, spike: 7, duration: 56 },
+  { color: '#7afcb1', width: 1.2, opacity: 0.34, seed: 37, volatility: 2.9, trendBias: 1.0, spike: 5, duration: 72 },
+  { color: '#f59e0b', width: 1.1, opacity: 0.14, seed: 51, volatility: 5.8, trendBias: 2.2, spike: 11, duration: 52 },
 ]
 
 export default function AnimatedStockChart() {
