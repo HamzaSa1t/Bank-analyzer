@@ -40,5 +40,4 @@ bank_logs.xlsx
 server-backend*.log
 
 # Large / duplicate model files
-models/model.pkl
 models/oof_predictions.csv
