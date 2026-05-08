@@ -317,13 +317,14 @@ function FinancialBreakdown({
   const dbrTone = Number(finalDbr) > SAMA_LIMIT ? 'text-red-300' : 'text-white/80'
 
   const rows = [
-    { label: t.modelPd, value: fmtPct(modelPd, 2) },
-    { label: t.offeredInterestRate, value: fmtPct(offeredRate, 2) },
+    { label: t.modelPd, value: fmtPct(modelPd, 2), desc: t.modelPdDesc },
+    { label: t.offeredInterestRate, value: fmtPct(offeredRate, 2), desc: t.offeredInterestRateDesc },
     {
       label: t.finalMonthlyPayment,
       value: isFiniteNumber(monthlyPayment) ? `SAR ${fmtSar(monthlyPayment)}` : 'Unavailable',
+      desc: t.finalMonthlyPaymentDesc,
     },
-    { label: t.finalDbr, value: fmtPct(finalDbr, 2), valueClass: dbrTone },
+    { label: t.finalDbr, value: fmtPct(finalDbr, 2), valueClass: dbrTone, desc: t.finalDbrDesc },
     {
       label: t.expectedRevenue,
       value: isFiniteNumber(revenue) ? `SAR ${fmtSar(revenue)}` : 'Unavailable',

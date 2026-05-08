@@ -101,6 +101,53 @@ function SectionHeader({ eyebrow, title, sub }) {
   )
 }
 
+// Collapses prose-heavy sections on mobile to keep the page short. On md+
+// the section renders normally with its full SectionHeader.
+function CollapsibleSection({ eyebrow, title, children }) {
+  const width = useWindowWidth()
+  const isMobile = width < 768
+  const [open, setOpen] = useState(false)
+
+  if (!isMobile) {
+    return (
+      <div className="space-y-6">
+        <SectionHeader eyebrow={eyebrow} title={title} />
+        {children}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-left transition hover:border-white/20"
+      >
+        <div className="min-w-0">
+          {eyebrow && <span className="label-muted">{eyebrow}</span>}
+          <h3 className="mt-1 break-words text-lg font-bold leading-[1.2]">
+            <span className="bg-gradient-to-r from-white to-electric-400 bg-clip-text text-transparent">
+              {title}
+            </span>
+          </h3>
+        </div>
+        <svg
+          viewBox="0 0 20 20"
+          className={`h-5 w-5 shrink-0 text-white/60 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open && <div className="pt-2">{children}</div>}
+    </div>
+  )
+}
+
 function Counter({ value, decimals = 0, format = (n) => n.toLocaleString() }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-80px' })
@@ -153,7 +200,7 @@ function HeroBlock({ t }) {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-80px' }}
-        className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3"
       >
         <Stat
           label={t.mpStatAuc}
@@ -173,20 +220,24 @@ function HeroBlock({ t }) {
           value={<Counter value={summary.brier_score} decimals={4} format={(n) => n.toFixed(4)} />}
           desc={t.mpStatEceDesc}
           accent="growth"
+          className="col-span-2 sm:col-span-1"
         />
       </motion.div>
     </div>
   )
 }
 
-function Stat({ label, value, desc, extra, accent }) {
+function Stat({ label, value, desc, extra, accent, className = '' }) {
   const text = accent === 'growth' ? 'text-growth-300' : 'text-electric-400'
   const blob = accent === 'growth' ? 'bg-growth-500' : 'bg-electric-500'
   return (
-    <motion.div variants={fadeUp} className="card card-hover group relative overflow-hidden p-5 sm:p-7">
+    <motion.div
+      variants={fadeUp}
+      className={`card card-hover group relative overflow-hidden p-5 sm:p-7 ${className}`}
+    >
       <div className={`absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl opacity-25 transition group-hover:opacity-40 ${blob}`} />
       <div className="relative">
-        <div className={`break-words text-3xl font-extrabold tracking-tight sm:text-4xl ${text}`}>{value}</div>
+        <div className={`break-words text-2xl font-extrabold tracking-tight sm:text-4xl ${text}`}>{value}</div>
         <p className="mt-3 break-words text-sm text-white/70">{label}</p>
         {desc && <p className="mt-2 break-words text-xs leading-relaxed text-white/55">{desc}</p>}
         {extra && (
@@ -204,34 +255,32 @@ function Stat({ label, value, desc, extra, accent }) {
 function SystemOverviewBlock({ t }) {
   const bullets = [t.mpSystemBullet1, t.mpSystemBullet2, t.mpSystemBullet3, t.mpSystemBullet4]
   return (
-    <div className="relative z-10 space-y-6 pt-8">
-      <SectionHeader eyebrow={t.mpSystemEyebrow} title={t.mpSystemTitle} />
-      <motion.div
-        variants={fadeUp}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: '-80px' }}
-      >
-        <div className="card relative overflow-hidden p-5 sm:p-6">
-          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-20" />
-          <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
-            <p className="text-white/90">{t.mpSystemBody1}</p>
-            <p>{t.mpSystemBody2}</p>
-            <div>
-              <p>{t.mpSystemBody3}</p>
-              <ul className="mt-2 space-y-1.5">
-                {bullets.map((b, i) => (
-                  <li key={i} className="flex min-w-0 items-start gap-2">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-growth-400" />
-                    <span className="min-w-0 break-words">{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-80px' }}
+      className="relative z-10"
+    >
+      <div className="card relative overflow-hidden p-5 sm:p-6">
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-20" />
+        <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
+          <p className="text-white/90">{t.mpSystemBody1}</p>
+          <p>{t.mpSystemBody2}</p>
+          <div>
+            <p>{t.mpSystemBody3}</p>
+            <ul className="mt-2 space-y-1.5">
+              {bullets.map((b, i) => (
+                <li key={i} className="flex min-w-0 items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-growth-400" />
+                  <span className="min-w-0 break-words">{b}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   )
 }
 
@@ -245,29 +294,26 @@ function RealisticBlock({ t }) {
     t.mpRealisticBullet4,
   ]
   return (
-    <div className="space-y-6">
-      <SectionHeader eyebrow={t.mpRealisticEyebrow} title={t.mpRealisticTitle} />
-      <motion.div
-        variants={fadeUp}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: '-80px' }}
-        className="card relative overflow-hidden p-5 sm:p-6"
-      >
-        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-growth-500 blur-3xl opacity-15" />
-        <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
-          <p className="text-white/90">{t.mpRealisticIntro}</p>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {bullets.map((b, i) => (
-              <li key={i} className="flex min-w-0 items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-growth-400" />
-                <span className="min-w-0 break-words">{b}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </motion.div>
-    </div>
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-80px' }}
+      className="card relative overflow-hidden p-5 sm:p-6"
+    >
+      <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-growth-500 blur-3xl opacity-15" />
+      <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
+        <p className="text-white/90">{t.mpRealisticIntro}</p>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {bullets.map((b, i) => (
+            <li key={i} className="flex min-w-0 items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-growth-400" />
+              <span className="min-w-0 break-words">{b}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </motion.div>
   )
 }
 
@@ -343,15 +389,13 @@ function DecisionLogicBlock({ t }) {
   ]
   const insightBullets = [t.mpInsightBullet1, t.mpInsightBullet2]
   return (
-    <div className="space-y-6">
-      <SectionHeader eyebrow={t.mpDecisionsEyebrow} title={t.mpDecisionsTitle} />
-      <motion.div
-        variants={{ show: { transition: { staggerChildren: 0.08 } } }}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: '-80px' }}
-        className="grid gap-5 lg:grid-cols-5"
-      >
+    <motion.div
+      variants={{ show: { transition: { staggerChildren: 0.08 } } }}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-80px' }}
+      className="grid gap-5 lg:grid-cols-5"
+    >
         <motion.div variants={fadeUp} className="card relative overflow-hidden p-5 sm:p-6 lg:col-span-3">
           <div className="absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-20" />
           <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
@@ -391,8 +435,7 @@ function DecisionLogicBlock({ t }) {
             </ul>
           </div>
         </motion.div>
-      </motion.div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -400,15 +443,13 @@ function DecisionLogicBlock({ t }) {
 
 function ExampleBlock({ t }) {
   return (
-    <div className="space-y-6">
-      <SectionHeader eyebrow={t.mpExampleEyebrow} title={t.mpExampleTitle} />
-      <motion.div
-        variants={fadeUp}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: '-80px' }}
-        className="card relative overflow-hidden p-5 sm:p-6"
-      >
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-80px' }}
+      className="card relative overflow-hidden p-5 sm:p-6"
+    >
         <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-15" />
         <div className="relative space-y-5">
           <p className="break-words text-sm leading-relaxed text-white/80">{t.mpExampleIntro}</p>
@@ -451,8 +492,7 @@ function ExampleBlock({ t }) {
             </div>
           </div>
         </div>
-      </motion.div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -467,30 +507,27 @@ function WhyAloneBlock({ t }) {
     t.mpAloneBullet5,
   ]
   return (
-    <div className="space-y-6">
-      <SectionHeader eyebrow={t.mpAloneEyebrow} title={t.mpAloneTitle} />
-      <motion.div
-        variants={fadeUp}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: '-80px' }}
-        className="card relative overflow-hidden p-5 sm:p-6"
-      >
-        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-15" />
-        <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
-          <p className="text-white/90">{t.mpAloneIntro}</p>
-          <p className="text-white/70">{t.mpAloneSub}</p>
-          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {bullets.map((b, i) => (
-              <li key={i} className="flex min-w-0 items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-electric-400" />
-                <span className="min-w-0 break-words">{b}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </motion.div>
-    </div>
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-80px' }}
+      className="card relative overflow-hidden p-5 sm:p-6"
+    >
+      <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-15" />
+      <div className="relative space-y-4 break-words text-sm leading-relaxed text-white/75">
+        <p className="text-white/90">{t.mpAloneIntro}</p>
+        <p className="text-white/70">{t.mpAloneSub}</p>
+        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {bullets.map((b, i) => (
+            <li key={i} className="flex min-w-0 items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-white/75">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-electric-400" />
+              <span className="min-w-0 break-words">{b}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </motion.div>
   )
 }
 
@@ -896,7 +933,7 @@ function DriversBar({ t }) {
         viewport={{ once: true, margin: '-80px' }}
         className="grid gap-6 lg:grid-cols-5"
       >
-        <div className="card p-5 sm:p-6 lg:col-span-3">
+        <div className="card hidden p-5 sm:p-6 md:block lg:col-span-3">
           <div className="pb-1" dir="ltr" style={{ direction: 'ltr' }}>
           <div className="w-full" style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -1043,19 +1080,29 @@ export default function ModelPerformance({ t }) {
   return (
     <section
       id="model-performance"
-      className="relative mx-auto max-w-7xl space-y-14 px-4 py-16 scroll-mt-20 sm:space-y-20 sm:px-6 sm:py-24"
+      className="relative mx-auto max-w-7xl space-y-10 px-4 py-12 scroll-mt-20 sm:space-y-20 sm:px-6 sm:py-24"
     >
       <div className="pointer-events-none absolute left-1/2 top-0 z-0 h-[620px] w-screen -translate-x-1/2 overflow-hidden opacity-55">
         <AnimatedStockChart />
       </div>
       <div className="pointer-events-none absolute left-1/2 top-0 z-0 h-[620px] w-screen -translate-x-1/2 bg-gradient-to-b from-transparent via-navy-950/20 to-navy-950" />
       <HeroBlock t={t} />
-      <SystemOverviewBlock t={t} />
-      <RealisticBlock t={t} />
+      <CollapsibleSection eyebrow={t.mpSystemEyebrow} title={t.mpSystemTitle}>
+        <SystemOverviewBlock t={t} />
+      </CollapsibleSection>
+      <CollapsibleSection eyebrow={t.mpRealisticEyebrow} title={t.mpRealisticTitle}>
+        <RealisticBlock t={t} />
+      </CollapsibleSection>
       <FlowBlock t={t} />
-      <DecisionLogicBlock t={t} />
-      <ExampleBlock t={t} />
-      <WhyAloneBlock t={t} />
+      <CollapsibleSection eyebrow={t.mpDecisionsEyebrow} title={t.mpDecisionsTitle}>
+        <DecisionLogicBlock t={t} />
+      </CollapsibleSection>
+      <CollapsibleSection eyebrow={t.mpExampleEyebrow} title={t.mpExampleTitle}>
+        <ExampleBlock t={t} />
+      </CollapsibleSection>
+      <CollapsibleSection eyebrow={t.mpAloneEyebrow} title={t.mpAloneTitle}>
+        <WhyAloneBlock t={t} />
+      </CollapsibleSection>
 
       <div className="space-y-8">
         <SectionHeader eyebrow={t.mpChartsEyebrow} title={t.mpChartsTitle} sub={t.mpPerfHeaderDesc} />
