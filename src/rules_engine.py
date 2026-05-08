@@ -47,13 +47,14 @@ RULES: list[dict[str, Any]] = [
 ]
 
 
-def check_hard_rules(features: dict[str, Any], bank_type: str, language: str) -> dict[str, Any]:
-    lang = language if language in ("ar", "en") else "en"
+def check_hard_rules(features: dict[str, Any], bank_type: str, language: str) -> dict[str, Any]:  # noqa: ARG001
+    """Return the first failing rule, with the reason in BOTH languages so the
+    frontend can switch language client-side without re-querying."""
     for rule in RULES:
         if rule["check"](features):
             return {
                 "passed": False,
-                "reason": rule[lang],
+                "reason": {"en": rule["en"], "ar": rule["ar"]},
                 "code": rule["code"],
                 "feature": rule["feature"],
             }

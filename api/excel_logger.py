@@ -132,6 +132,21 @@ def _build_row(req: AssessmentRequest, resp: AssessmentResponse) -> list[Any]:
     # `gate_results` may be missing on legacy responses — degrade gracefully.
     gates = resp.gate_results or {}
 
+    # Narrative is dual-language now; the spreadsheet only logs the language
+    # the applicant submitted with so the columns stay narrow.
+    lang = req.language if req.language in ("en", "ar") else "en"
+
+    def _pick_text(value: Any) -> str:
+        if isinstance(value, dict):
+            return str(value.get(lang) or value.get("en") or "")
+        return str(value or "")
+
+    def _pick_list(value: Any) -> list[str]:
+        if isinstance(value, dict):
+            picked = value.get(lang) or value.get("en") or []
+            return list(picked) if isinstance(picked, list) else []
+        return list(value) if isinstance(value, list) else []
+
     return [
         datetime.now().isoformat(timespec="seconds"),
         compute_request_fingerprint(req),
@@ -151,7 +166,7 @@ def _build_row(req: AssessmentRequest, resp: AssessmentResponse) -> list[Any]:
         resp.decision,
         resp.risk_level,
         resp.passed_hard_rules,
-        resp.hard_rule_rejection or "",
+        _pick_text(resp.hard_rule_rejection),
         ", ".join(resp.failed_rules or []),
         # Pricing/model fields stay None when the model was bypassed — openpyxl
         # writes them as empty cells, which reads as "null" rather than "0".
@@ -175,11 +190,11 @@ def _build_row(req: AssessmentRequest, resp: AssessmentResponse) -> list[Any]:
         resp.expected_loss,
         resp.expected_profit,
         json.dumps(drivers, ensure_ascii=False, default=str),
-        resp.risk_summary,
-        _bullets(resp.key_strengths),
-        _bullets(resp.key_concerns),
-        resp.decision_explanation,
-        _bullets(resp.suggested_actions),
+        _pick_text(resp.risk_summary),
+        _bullets(_pick_list(resp.key_strengths)),
+        _bullets(_pick_list(resp.key_concerns)),
+        _pick_text(resp.decision_explanation),
+        _bullets(_pick_list(resp.suggested_actions)),
     ]
 
 

@@ -18,11 +18,11 @@ class SimahProfile(BaseModel):
 
 class AssessmentRequest(BaseModel):
     bank_type: str = Field(..., description='"conservative" | "aggressive"')
-    gross_salary: float
-    loan_amount: float
-    loan_months: int
+    gross_salary: float = Field(..., ge=0)
+    loan_amount: float = Field(..., ge=0)
+    loan_months: int = Field(..., ge=1)
     employment_type: str = Field(..., description='"government" | "private" | "self"')
-    age: int
+    age: int = Field(..., ge=0)
     language: str = Field("en", description='"ar" | "en"')
     simah_profile: dict
 
@@ -30,7 +30,8 @@ class AssessmentRequest(BaseModel):
 class AssessmentResponse(BaseModel):
     # Decision + hard rules
     passed_hard_rules: bool
-    hard_rule_rejection: Optional[str] = None
+    # Localized {"en": "...", "ar": "..."} when populated. Null when hard rules passed.
+    hard_rule_rejection: Optional[dict[str, str]] = None
     decision: str
     risk_level: str
     failed_rules: list[str] = Field(default_factory=list)
@@ -68,9 +69,11 @@ class AssessmentResponse(BaseModel):
     shap_top5: list[dict[str, Any]]
     shap_plot_b64: str
 
-    # Structured LLM narrative (replaces llm_reason / llm_recommendation).
-    risk_summary: str
-    key_strengths: list[str]
-    key_concerns: list[str]
-    decision_explanation: str
-    suggested_actions: list[str]
+    # Structured narrative — localized {"en": ..., "ar": ...} so the frontend
+    # can switch language client-side without re-querying. Lists carry per-lang
+    # arrays of equal logical length.
+    risk_summary: dict[str, str]
+    key_strengths: dict[str, list[str]]
+    key_concerns: dict[str, list[str]]
+    decision_explanation: dict[str, str]
+    suggested_actions: dict[str, list[str]]

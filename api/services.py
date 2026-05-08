@@ -218,15 +218,15 @@ def _hard_rule_driver(rules: dict, features: dict) -> list[dict]:
 def _hard_rule_response(req: AssessmentRequest, rules: dict, features: dict) -> AssessmentResponse:
     """Short-circuit response when SAMA hard rules fail. No model call, no LLM call.
 
-    Each of the five narrative fields plays a distinct role:
+    Narrative is emitted in BOTH languages so the frontend can switch language
+    client-side without re-querying. Each field plays a distinct role:
       - risk_summary: high-level, rule-agnostic context.
       - key_concerns: the specific rule fact (one entry).
       - decision_explanation: WHY the rule matters + WHAT was skipped.
       - key_strengths: empty (no fake strengths on a hard rejection).
       - suggested_actions: 3 unique actionable items, none repeating the concern.
     """
-    lang = req.language if req.language in ("ar", "en") else "en"
-    reason = rules["reason"]
+    reason = rules["reason"]  # {"en": ..., "ar": ...}
     code = rules.get("code", "")
 
     bank_type = req.bank_type
@@ -234,18 +234,20 @@ def _hard_rule_response(req: AssessmentRequest, rules: dict, features: dict) -> 
     pd_threshold = ml_inference.THRESHOLDS.get(bank_type, ml_inference.THRESHOLDS["conservative"])
     min_score = ml_inference.MIN_SCORES.get(bank_type, ml_inference.MIN_SCORES["conservative"])
 
-    risk_summary = HARD_RULE_RISK_SUMMARY[lang]
-    decision_explanation = HARD_RULE_EXPLANATIONS[lang].get(
-        code,
-        HARD_RULE_EXPLANATIONS[lang]["dbr_limit"],
-    )
-    key_concerns = deduplicate_list([reason])
-    suggested_actions = deduplicate_list(
-        _strip_duplicates_against(
-            HARD_RULE_ACTIONS[lang].get(code, HARD_RULE_ACTIONS[lang]["dbr_limit"]),
-            key_concerns,
+    def _build(lang: str) -> dict:
+        rs = HARD_RULE_RISK_SUMMARY[lang]
+        de = HARD_RULE_EXPLANATIONS[lang].get(code, HARD_RULE_EXPLANATIONS[lang]["dbr_limit"])
+        kc = deduplicate_list([reason[lang]])
+        sa = deduplicate_list(
+            _strip_duplicates_against(
+                HARD_RULE_ACTIONS[lang].get(code, HARD_RULE_ACTIONS[lang]["dbr_limit"]),
+                kc,
+            )
         )
-    )
+        return {"risk_summary": rs, "decision_explanation": de, "key_concerns": kc, "suggested_actions": sa}
+
+    en = _build("en")
+    ar = _build("ar")
 
     failed_rules = [rules["code"]]
     decision = enforce_decision_consistency(False, failed_rules, "REJECTED")
@@ -277,11 +279,11 @@ def _hard_rule_response(req: AssessmentRequest, rules: dict, features: dict) -> 
         gate_results=gate_results,
         shap_top5=_hard_rule_driver(rules, features),
         shap_plot_b64="",
-        risk_summary=risk_summary,
-        key_strengths=[],
-        key_concerns=key_concerns,
-        decision_explanation=decision_explanation,
-        suggested_actions=suggested_actions,
+        risk_summary={"en": en["risk_summary"], "ar": ar["risk_summary"]},
+        key_strengths={"en": [], "ar": []},
+        key_concerns={"en": en["key_concerns"], "ar": ar["key_concerns"]},
+        decision_explanation={"en": en["decision_explanation"], "ar": ar["decision_explanation"]},
+        suggested_actions={"en": en["suggested_actions"], "ar": ar["suggested_actions"]},
     )
 
 

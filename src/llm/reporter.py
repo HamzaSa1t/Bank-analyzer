@@ -340,13 +340,27 @@ def generate(
     shap_result: dict[str, Any],  # noqa: ARG001 — kept for call-site compatibility
     features: dict[str, Any],     # noqa: ARG001
     bank_type: str,               # noqa: ARG001
-    language: str,
+    language: str,                # noqa: ARG001 — kept for call-site compatibility
 ) -> dict[str, Any]:
-    """Build the structured report directly from backend gate results.
+    """Build the structured report in BOTH languages so the frontend can
+    switch language client-side without re-querying.
 
-    The external LLM is intentionally bypassed (spec section 3, simpler path):
-    every prior production failure was a hallucination where the LLM contradicted
+    The external LLM is intentionally bypassed (spec section 3): every prior
+    production failure was a hallucination where the LLM contradicted
     `failed_rules`, so the safest fix is to never let the LLM author the report.
-    `_validate_against_facts` is retained for any future polish layer.
     """
-    return _build_deterministic(ml_result, language)
+    en = _build_deterministic(ml_result, "en")
+    ar = _build_deterministic(ml_result, "ar")
+    return {
+        "risk_summary": {"en": en["risk_summary"], "ar": ar["risk_summary"]},
+        "key_strengths": {"en": en["key_strengths"], "ar": ar["key_strengths"]},
+        "key_concerns": {"en": en["key_concerns"], "ar": ar["key_concerns"]},
+        "decision_explanation": {
+            "en": en["decision_explanation"],
+            "ar": ar["decision_explanation"],
+        },
+        "suggested_actions": {
+            "en": en["suggested_actions"],
+            "ar": ar["suggested_actions"],
+        },
+    }

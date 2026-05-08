@@ -30,7 +30,16 @@ const POLICY_FALLBACK = {
   aggressive:   { max_pd_allowed: 0.20, pd_threshold: 0.15, min_score: 480 },
 }
 
-export default function ResultsDashboard({ result, t, bankType }) {
+// Backend now emits dual-language narrative as {en, ar}. Pick the active
+// language client-side; tolerate legacy plain-string responses too.
+const pickLocalized = (value, lang) => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value[lang] ?? value.en ?? null
+  }
+  return value ?? null
+}
+
+export default function ResultsDashboard({ result, t, bankType, lang = 'en' }) {
   if (!result) return null
 
   const isHardRejected = result.passed_hard_rules === false
@@ -136,7 +145,7 @@ export default function ResultsDashboard({ result, t, bankType }) {
   const approved = result.decision === 'APPROVED'
   const failedReasons = failedRules.map((code) => t[`fr_${code}`] || code)
   const policyReason = isHardRejected
-    ? failedReasons[0] || result.hard_rule_rejection
+    ? failedReasons[0] || pickLocalized(result.hard_rule_rejection, lang)
     : null
 
   // Consistency check: the backend already enforces decision/gates agreement
@@ -210,12 +219,12 @@ export default function ResultsDashboard({ result, t, bankType }) {
 
       <LLMReport
         decision={result.decision}
-        riskSummary={result.risk_summary}
-        keyStrengths={result.key_strengths}
-        keyConcerns={result.key_concerns}
-        decisionExplanation={result.decision_explanation}
-        suggestedActions={result.suggested_actions}
-        hardRuleRejection={result.hard_rule_rejection}
+        riskSummary={pickLocalized(result.risk_summary, lang)}
+        keyStrengths={pickLocalized(result.key_strengths, lang)}
+        keyConcerns={pickLocalized(result.key_concerns, lang)}
+        decisionExplanation={pickLocalized(result.decision_explanation, lang)}
+        suggestedActions={pickLocalized(result.suggested_actions, lang)}
+        hardRuleRejection={pickLocalized(result.hard_rule_rejection, lang)}
         t={t}
       />
     </motion.section>
