@@ -132,7 +132,7 @@ export default function Home({ t, lang }) {
         )}
 
         <div ref={reportRef}>
-          {a.result && <ResultsDashboard result={a.result} t={t} />}
+          {a.result && <ResultsDashboard result={a.result} t={t} bankType={a.bankType} />}
         </div>
       </main>
     </>

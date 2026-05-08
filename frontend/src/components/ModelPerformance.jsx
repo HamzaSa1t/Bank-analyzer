@@ -31,10 +31,14 @@ function useMetricsSummary() {
     fetchMetricsSummary()
       .then((res) => {
         if (cancelled || !res) return
+        // Only override the fallback when the API returns a positive value.
+        // A freshly-deployed backend that hasn't run training yet returns
+        // 0 for these keys; without this guard the counter would freeze at 0.
+        const positive = (n) => Number.isFinite(Number(n)) && Number(n) > 0
         setSummary({
-          oof_auc: Number(res.oof_auc ?? SUMMARY_FALLBACK.oof_auc),
-          n_total: Number(res.n_total ?? SUMMARY_FALLBACK.n_total),
-          brier_score: Number(res.brier_score ?? SUMMARY_FALLBACK.brier_score),
+          oof_auc: positive(res.oof_auc) ? Number(res.oof_auc) : SUMMARY_FALLBACK.oof_auc,
+          n_total: positive(res.n_total) ? Number(res.n_total) : SUMMARY_FALLBACK.n_total,
+          brier_score: positive(res.brier_score) ? Number(res.brier_score) : SUMMARY_FALLBACK.brier_score,
         })
       })
       .catch(() => { /* keep fallback */ })
@@ -849,16 +853,17 @@ function DriversBar({ t }) {
   const width = useWindowWidth()
   const isMobile = width < 768
   // On mobile, label width and font shrink so bars get the room they need.
-  const yAxisWidth = isMobile ? (isArabic ? 130 : 110) : isArabic ? 280 : 170
+  const yAxisWidth = isMobile ? (isArabic ? 110 : 96) : isArabic ? 280 : 170
   const tickFontSize = isMobile ? 10 : isArabic ? 12 : 11
   const chartMargin = isMobile
     ? { top: 4, right: 12, left: 4, bottom: 4 }
     : { top: 8, right: 24, left: 8, bottom: 8 }
   // Height grows with bar count; clamped so it never collapses or runs away.
-  const chartHeight = Math.min(600, Math.max(360, drivers.length * 36 + 80))
+  // Bumped per-bar height on mobile so bars never overlap on tight screens.
+  const chartHeight = Math.min(720, Math.max(420, drivers.length * 44 + 80))
   const truncateLabel = (s) => {
     if (typeof s !== 'string') return s
-    const limit = isMobile ? 22 : 60
+    const limit = isMobile ? 18 : 60
     return s.length > limit ? `${s.slice(0, limit - 1)}…` : s
   }
   return (
@@ -901,7 +906,16 @@ function DriversBar({ t }) {
                 margin={chartMargin}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" horizontal={false} />
-                <XAxis type="number" stroke="rgba(255,255,255,0.5)" fontSize={isMobile ? 10 : 11} />
+                <XAxis
+                  type="number"
+                  stroke="rgba(255,255,255,0.5)"
+                  fontSize={isMobile ? 10 : 11}
+                  // The raw SHAP magnitude isn't meaningful to lay readers and
+                  // the axis line eats horizontal space on phones — hide it.
+                  tick={isMobile ? false : undefined}
+                  axisLine={!isMobile}
+                  tickLine={!isMobile}
+                />
                 <YAxis
                   type="category"
                   dataKey="feat"
@@ -941,7 +955,6 @@ function DriversBar({ t }) {
           <div className="mt-3 flex flex-wrap items-center justify-end gap-4 text-[11px]">
             <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-growth-400" />{t.mpImpactGood}</span>
             <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-400" />{t.mpImpactBad}</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-white/40" />{t.mpImpactNeutral}</span>
           </div>
         </div>
         <ul className="space-y-2 lg:col-span-2">

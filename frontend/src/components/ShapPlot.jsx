@@ -6,15 +6,20 @@ import { prettyFeature } from '../lib/featureLabels.js'
 const NEUTRAL_THRESHOLD = 0.005
 
 export default function ShapPlot({ top5, t }) {
+  const items = Array.isArray(top5) ? top5 : []
+  // Normalize each driver's contribution as a share of the visible top-N
+  // sum, so each row reads as a clean "X% impact" instead of a raw SHAP value.
+  const total = items.reduce((sum, d) => sum + Math.abs(Number(d?.shap_value) || 0), 0)
+
   return (
     <div className="space-y-4">
       <div className="flex min-w-0 items-center justify-between">
         <h4 className="break-words text-sm font-semibold text-white/80">{t.shapTitle}</h4>
       </div>
 
-      {top5 && top5.length > 0 && (
+      {items.length > 0 && (
         <ul className="space-y-2">
-          {top5.map((d, i) => {
+          {items.map((d, i) => {
             const value = Number(d.shap_value)
             const magnitude = Math.abs(value)
             const isNeutral = !Number.isFinite(value) || magnitude < NEUTRAL_THRESHOLD
@@ -38,23 +43,27 @@ export default function ShapPlot({ top5, t }) {
               ? t.driverHurting
               : t.driverHelping
 
-            const sign = isNeutral ? '' : raisesPd ? '+' : ''
+            const arrow = isNeutral ? '·' : raisesPd ? '↑' : '↓'
+            const pct = total > 0 ? Math.round((magnitude / total) * 100) : 0
 
             return (
               <li
                 key={i}
-                className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
               >
-                <span className="min-w-0 break-words text-white/80">{prettyFeature(d.feature, t)}</span>
+                <span className="min-w-0 flex-1 break-words text-white/80">{prettyFeature(d.feature, t)}</span>
                 <span className="flex shrink-0 items-center gap-2">
                   <span
                     className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeCls}`}
                   >
                     {badgeText}
                   </span>
-                  <span className={`font-mono text-xs ${valueCls}`}>
-                    {sign}
-                    {value.toFixed(3)}
+                  <span
+                    className={`inline-flex items-center gap-1 font-mono text-xs ${valueCls}`}
+                    aria-label={`${pct}% impact, ${badgeText}`}
+                  >
+                    <span aria-hidden>{arrow}</span>
+                    {pct}%
                   </span>
                 </span>
               </li>

@@ -63,7 +63,7 @@ export default function Navigation({ t, lang, onLangChange }) {
             className="pill hover:bg-white/10"
             aria-label="toggle language"
           >
-            {lang === 'ar' ? 'EN' : 'AR'}
+            {lang === 'ar' ? 'EN' : 'ع'}
           </button>
           <CtaButton label={t.getStarted} />
           <button

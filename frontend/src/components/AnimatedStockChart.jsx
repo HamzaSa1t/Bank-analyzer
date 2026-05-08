@@ -27,7 +27,7 @@ function makeMarketSeries({ seed, points, volatility, trendBias, spike }) {
 
     const consolidation = rand() < 0.2 ? 0.35 : 1
     let move = ((rand() - 0.5) * volatility + drift) * consolidation
-    if (rand() < 0.045) move += (rand() > 0.5 ? 1 : -1) * spike * (0.45 + rand())
+    if (rand() < 0.025) move += (rand() > 0.5 ? 1 : -1) * spike * (0.45 + rand())
     returns.push(move)
   }
 
@@ -73,17 +73,17 @@ function pathFor(series) {
 }
 
 const LINE_CONFIGS = [
-  { color: '#34e89f', width: 2.2, opacity: 0.86, seed: 11, volatility: 5.8, trendBias: 1.8, spike: 9, duration: 24 },
-  { color: '#3b82ff', width: 1.7, opacity: 0.58, seed: 23, volatility: 4.2, trendBias: 1.4, spike: 7, duration: 32 },
-  { color: '#7afcb1', width: 1.2, opacity: 0.34, seed: 37, volatility: 3.4, trendBias: 1.0, spike: 5, duration: 42 },
-  { color: '#f59e0b', width: 1.1, opacity: 0.22, seed: 51, volatility: 6.8, trendBias: 2.2, spike: 11, duration: 29 },
+  { color: '#34e89f', width: 2.2, opacity: 0.86, seed: 11, volatility: 4.9, trendBias: 1.8, spike: 9, duration: 26 },
+  { color: '#3b82ff', width: 1.7, opacity: 0.58, seed: 23, volatility: 3.6, trendBias: 1.4, spike: 7, duration: 34 },
+  { color: '#7afcb1', width: 1.2, opacity: 0.34, seed: 37, volatility: 2.9, trendBias: 1.0, spike: 5, duration: 44 },
+  { color: '#f59e0b', width: 1.1, opacity: 0.14, seed: 51, volatility: 5.8, trendBias: 2.2, spike: 11, duration: 31 },
 ]
 
 export default function AnimatedStockChart() {
   const lines = useMemo(() => {
     return LINE_CONFIGS.map((cfg) => ({
       cfg,
-      d: pathFor(makeMarketSeries({ ...cfg, points: 96 })),
+      d: pathFor(makeMarketSeries({ ...cfg, points: 160 })),
     }))
   }, [])
 

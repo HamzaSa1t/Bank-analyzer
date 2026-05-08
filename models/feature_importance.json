@@ -11,14 +11,14 @@
       "feature": "ANNUITY_CREDIT_RATIO",
       "shap_mean_abs": 0.1167,
       "rank_shap": 2,
-      "impact": "neutral",
+      "impact": "bad",
       "description_key": "drv_ANNUITY_CREDIT_RATIO"
     },
     {
       "feature": "GOODS_CREDIT_RATIO",
       "shap_mean_abs": 0.1127,
       "rank_shap": 3,
-      "impact": "neutral",
+      "impact": "good",
       "description_key": "drv_GOODS_CREDIT_RATIO"
     },
     {
@@ -53,7 +53,7 @@
       "feature": "OWN_CAR_AGE",
       "shap_mean_abs": 0.0837,
       "rank_shap": 8,
-      "impact": "neutral",
+      "impact": "bad",
       "description_key": "drv_OWN_CAR_AGE"
     },
     {
@@ -67,7 +67,7 @@
       "feature": "CODE_GENDER_M",
       "shap_mean_abs": 0.0748,
       "rank_shap": 10,
-      "impact": "neutral",
+      "impact": "bad",
       "description_key": "drv_CODE_GENDER_M"
     }
   ],

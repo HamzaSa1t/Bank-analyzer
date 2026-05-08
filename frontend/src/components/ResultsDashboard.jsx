@@ -21,16 +21,29 @@ const POST_ML_FIELDS = [
   'expected_revenue', 'expected_loss', 'expected_profit',
 ]
 
-export default function ResultsDashboard({ result, t }) {
+// Deploy-skew safety net: these are the same constants the backend uses
+// (src/ml/inference.py:30–34). When a stale Railway deploy returns a response
+// without max_pd_allowed / pd_threshold / min_score, we render the policy
+// thresholds the UI needs without faking the model output itself.
+const POLICY_FALLBACK = {
+  conservative: { max_pd_allowed: 0.08, pd_threshold: 0.05, min_score: 650 },
+  aggressive:   { max_pd_allowed: 0.20, pd_threshold: 0.15, min_score: 480 },
+}
+
+export default function ResultsDashboard({ result, t, bankType }) {
   if (!result) return null
 
   const isHardRejected = result.passed_hard_rules === false
   const r = riskMap[result.risk_level] || riskMap.MEDIUM
 
+  const fb = POLICY_FALLBACK[bankType] || POLICY_FALLBACK.conservative
+  const pickThreshold = (key) =>
+    result[key] === undefined ? fb[key] : result[key]
+
   const modelPd = result.model_pd
-  const maxPd = result.max_pd_allowed
-  const pdRef = result.pd_threshold
-  const minScore = result.min_score
+  const maxPd = pickThreshold('max_pd_allowed')
+  const pdRef = pickThreshold('pd_threshold')
+  const minScore = pickThreshold('min_score')
   const creditScore = result.credit_score
   const finalDbr = result.final_dbr
   const profit = result.expected_profit
@@ -90,7 +103,13 @@ export default function ResultsDashboard({ result, t }) {
   // Detail / sub strings stay client-side they read the displayed numbers
   // straight off the response and are never shown when the gate was skipped.
   const gates = [
-    { label: t.gateHardRules, ...hardStatus },
+    {
+      label: t.gateHardRules,
+      ...hardStatus,
+      // Show the explanation only when the gate actually passed — a failed
+      // hard-rule path already gets its own dedicated rejection block.
+      sub: hardStatus.pass && !hardStatus.skipped ? t.gateHardRulesHelp : null,
+    },
     {
       label: t.gatePdMax,
       ...pdStatus,
@@ -160,13 +179,6 @@ export default function ResultsDashboard({ result, t }) {
           {t.resultsTitle}
         </span>
       </h2>
-
-      <div
-        role="note"
-        className="break-words rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white/60"
-      >
-        {t.resultsDisclaimer}
-      </div>
 
       {isHardRejected ? (
         <AssessmentStatus t={t} />
@@ -306,17 +318,20 @@ function FinancialBreakdown({
     {
       label: t.expectedRevenue,
       value: isFiniteNumber(revenue) ? `SAR ${fmtSar(revenue)}` : 'Unavailable',
+      desc: t.expectedRevenueDesc,
     },
     {
       label: t.expectedLoss,
       value: isFiniteNumber(loss) ? `SAR ${fmtSar(loss)}` : 'Unavailable',
       valueClass: 'text-red-300/80',
+      desc: t.expectedLossDesc,
     },
     {
       label: t.expectedProfit,
       value: isFiniteNumber(profit) ? `SAR ${fmtSar(profit)}` : 'Unavailable',
       valueClass: profitTone,
       bold: true,
+      desc: t.expectedProfitDesc,
     },
   ]
 
@@ -332,16 +347,21 @@ function FinancialBreakdown({
         {rows.map((row) => (
           <div
             key={row.label}
-            className="flex min-w-0 flex-col gap-1 rounded-lg border border-white/5 bg-white/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-white/5 bg-white/5 px-4 py-3"
           >
-            <span className="label-muted">{row.label}</span>
-            <span
-              className={`break-words font-mono ${row.valueClass || 'text-white/80'} ${
-                row.bold ? 'font-semibold' : ''
-              }`}
-            >
-              {row.value}
-            </span>
+            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <span className="label-muted">{row.label}</span>
+              <span
+                className={`break-words font-mono ${row.valueClass || 'text-white/80'} ${
+                  row.bold ? 'font-semibold' : ''
+                }`}
+              >
+                {row.value}
+              </span>
+            </div>
+            {row.desc && (
+              <p className="break-words text-[11px] leading-relaxed text-white/45">{row.desc}</p>
+            )}
           </div>
         ))}
       </div>
