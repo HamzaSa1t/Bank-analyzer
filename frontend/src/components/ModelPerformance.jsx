@@ -933,7 +933,7 @@ function DriversBar({ t }) {
         viewport={{ once: true, margin: '-80px' }}
         className="grid gap-6 lg:grid-cols-5"
       >
-        <div className="card hidden p-5 sm:p-6 md:block lg:col-span-3">
+        <div className="card p-5 sm:p-6 lg:col-span-3">
           <div className="pb-1" dir="ltr" style={{ direction: 'ltr' }}>
           <div className="w-full" style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">

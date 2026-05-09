@@ -131,7 +131,7 @@ export const STRINGS = {
     navModelPerformance: 'أداء النموذج',
     mpEyebrow: '',
     mpHeroTitle: 'تحت الغطاء',
-    mpHeroSub: 'يستخدم النظام خوارزمية XGBoost لتدريب نموذج مخاطر ائتمانية على بيانات قروض حقيقية واسعة النطاق (مجموعة Home Credit).',
+    mpHeroSub: 'يستخدم النظام خوارزمية XGBoost لتدريب نموذج مخاطر ائتمانية على بيانات قروض حقيقية واسعة النطاق (مجموعة بيانات Home Credit).',
     mpModelDetailsLink: 'عرض تفاصيل النموذج',
     mpStatAuc: 'مؤشر AUC-ROC',
     mpStatAucDesc: 'يقيس مدى قدرة النموذج على ترتيب المتقدمين ذوي المخاطر العالية فوق المتقدمين ذوي المخاطر المنخفضة.',
