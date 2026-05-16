@@ -122,10 +122,99 @@ const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const humanizeOneHotSuffix = (suffix) =>
   suffix.replace(/_/g, ' ').replace(/\s+/g, ' ').trim()
 
+// Token dictionaries used by the final-fallback humanizer so any model column
+// (e.g. INSTAL_DAYS_ENTRY_PAYMENT_MIN) renders as readable text instead of the
+// raw underscore form. Order: lowercase-with-spaces output for natural reading.
+const TOKEN_LABELS_EN = {
+  BUREAU: 'bureau', INSTAL: 'installment', CARD: 'credit card',
+  ACTIVE: 'active', CLOSED: 'closed', PROLONGED: 'prolonged',
+  DAYS: 'days', DPD: 'DPD', DEF: 'defaults',
+  AMT: 'amount', AMOUNT: 'amount', CNT: 'count', COUNT: 'count',
+  PCT: '%', AVG: 'avg', MAX: 'max', MIN: 'min', MEAN: 'mean',
+  STD: 'std', SUM: 'total', TOTAL: 'total',
+  RATIO: 'ratio', RATE: 'rate',
+  DEBT: 'debt', CREDIT: 'credit', LIMIT: 'limit',
+  OVERDUE: 'overdue', PAYMENT: 'payment', UNDERPAID: 'underpaid',
+  UNDERPAYMENT: 'underpayment', BALANCE: 'balance',
+  DRAWINGS: 'drawings', CURRENT: 'current', ATM: 'ATM', POS: 'POS',
+  RECEIVABLE: 'receivable', PRINCIPAL: 'principal',
+  ANNUITY: 'monthly installment', UTIL: 'utilization',
+  ENDDATE: 'end date', FACT: 'actual',
+  INVALID: 'invalid', REGULARITY: 'regularity',
+  RECENT: 'recent', LOAN: 'loan', LOANS: 'loans',
+  INCOME: 'income', AGE: 'age', YEARS: 'years',
+  RECORD: 'record', PREV: 'previous', UPDATE: 'update',
+  ENTRY: 'entry', INSTALMENT: 'installment',
+  RECEIVABLE_PRINCIPAL: 'principal receivable',
+  '12M': '12-month',
+  IS: 'is', EMPLOYED: 'employed', EMP: 'employer',
+  EXT: 'external', SOURCE: 'score', SIMAH: 'SIMAH',
+  GOODS: 'goods price',
+  FLAG: 'flag', REG: 'region', LIVE: 'lives', NOT: 'not',
+  WORK: 'work', CITY: 'city', SOCIAL: 'social', CIRCLE: 'circle',
+  REQ: 'requests', BUREAU_LIMIT_INVALID: 'bureau limit (invalid)',
+  PHONE: 'phone', EMAIL: 'email',
+}
+
+const TOKEN_LABELS_AR = {
+  BUREAU: 'الجهة الائتمانية', INSTAL: 'القسط', CARD: 'البطاقة الائتمانية',
+  ACTIVE: 'النشطة', CLOSED: 'المغلقة', PROLONGED: 'الممدّدة',
+  DAYS: 'أيام', DPD: 'تأخّر السداد', DEF: 'حالات تعثّر',
+  AMT: 'مبلغ', AMOUNT: 'مبلغ', CNT: 'عدد', COUNT: 'عدد',
+  PCT: 'نسبة', AVG: 'متوسط', MAX: 'الأعلى', MIN: 'الأدنى', MEAN: 'متوسط',
+  STD: 'الانحراف', SUM: 'إجمالي', TOTAL: 'إجمالي',
+  RATIO: 'نسبة', RATE: 'معدّل',
+  DEBT: 'الدين', CREDIT: 'الائتمان', LIMIT: 'الحد',
+  OVERDUE: 'المتأخّر', PAYMENT: 'السداد', UNDERPAID: 'ناقص السداد',
+  UNDERPAYMENT: 'نقص في السداد', BALANCE: 'الرصيد',
+  DRAWINGS: 'السحوبات', CURRENT: 'الحالية', ATM: 'صرّاف', POS: 'نقاط البيع',
+  RECEIVABLE: 'المستحقات', PRINCIPAL: 'أصل القرض',
+  ANNUITY: 'القسط الشهري', UTIL: 'استخدام',
+  ENDDATE: 'تاريخ الانتهاء', FACT: 'الفعلي',
+  INVALID: 'غير صالح', REGULARITY: 'انتظام',
+  RECENT: 'الأخير', LOAN: 'قرض', LOANS: 'القروض',
+  INCOME: 'الدخل', AGE: 'العمر', YEARS: 'سنوات',
+  RECORD: 'السجل', PREV: 'السابق', UPDATE: 'التحديث',
+  ENTRY: 'القيد', INSTALMENT: 'القسط',
+  '12M': 'خلال 12 شهرًا',
+  IS: 'حالة', EMPLOYED: 'العمل', EMP: 'صاحب العمل',
+  EXT: 'الخارجية', SOURCE: 'الدرجة', SIMAH: 'سمة',
+  GOODS: 'سعر السلعة',
+  FLAG: 'مؤشّر', REG: 'المنطقة', LIVE: 'الإقامة', NOT: 'ليس',
+  WORK: 'العمل', CITY: 'المدينة', SOCIAL: 'الاجتماعي', CIRCLE: 'المحيط',
+  REQ: 'استعلامات',
+  PHONE: 'الهاتف', EMAIL: 'البريد الإلكتروني',
+}
+
+const isArabicT = (t) => /[؀-ۿ]/.test(String(t?.brand ?? ''))
+
+// Final-fallback humanizer for column names that have no explicit label.
+// Splits on underscores, replaces known tokens with localized words, joins
+// with a space. Preserves digit groups like "12M".
+const humanizeColumnName = (name, lang) => {
+  const dict = lang === 'ar' ? TOKEN_LABELS_AR : TOKEN_LABELS_EN
+  const words = String(name)
+    .split('_')
+    .filter(Boolean)
+    .map((tok) => {
+      const up = tok.toUpperCase()
+      if (dict[up]) return dict[up]
+      if (/^\d/.test(tok)) return tok // keep numeric tokens (12M, 30, 60)
+      return lang === 'ar' ? tok.toLowerCase() : tok.toLowerCase()
+    })
+  if (!words.length) return name
+  if (lang !== 'ar') {
+    words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1)
+  }
+  return words.join(' ')
+}
+
 export const prettyFeature = (name, t) => {
   if (!name) return name
   const direct = t?.[`feat_${name}`] ?? FEATURE_LABELS[name]
   if (direct) return direct
+
+  const lang = isArabicT(t) ? 'ar' : 'en'
 
   // One-hot fallback: NAME_INCOME_TYPE_Working → "Income source: Working"
   for (const [prefix, fallbackLabel] of Object.entries(ONE_HOT_PREFIXES)) {
@@ -135,7 +224,7 @@ export const prettyFeature = (name, t) => {
       return suffix ? `${label}: ${suffix}` : label
     }
   }
-  return name
+  return humanizeColumnName(name, lang)
 }
 
 export const humanizeFeatureText = (text, t) => {

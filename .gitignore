@@ -41,3 +41,5 @@ server-backend*.log
 
 # Large / duplicate model files
 models/oof_predictions.csv
+
+.vercel
