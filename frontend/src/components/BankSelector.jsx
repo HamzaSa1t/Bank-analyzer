@@ -24,12 +24,21 @@ const banks = [
 export default function BankSelector({ t, value, onSelect }) {
   return (
     <section className="relative">
+      <motion.span
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+        className="label-muted block"
+      >
+        {`${t.mpStep} 1`}
+      </motion.span>
       <motion.h2
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        className="break-words text-2xl font-bold sm:text-3xl"
+        transition={{ duration: 0.5, delay: 0.05 }}
+        className="mt-1 break-words text-2xl font-bold sm:text-3xl"
       >
         {t.pickBank}
       </motion.h2>
@@ -37,7 +46,7 @@ export default function BankSelector({ t, value, onSelect }) {
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.05 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
         className="mt-2 max-w-2xl break-words text-sm text-white/55"
       >
         {t.pickBankSub}
@@ -46,7 +55,7 @@ export default function BankSelector({ t, value, onSelect }) {
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.1 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
         className="mb-8 mt-4"
       >
         <span className="inline-flex max-w-full items-center justify-center rounded-full border border-electric-400/40 bg-electric-500/12 px-5 py-2.5 text-center text-sm font-semibold text-electric-200 shadow-glow transition">
@@ -54,7 +63,7 @@ export default function BankSelector({ t, value, onSelect }) {
         </span>
       </motion.div>
 
-      <div className="grid gap-5 md:grid-cols-2" id="bank-cards">
+      <div className="grid grid-cols-2 gap-3 md:gap-5" id="bank-cards">
         {banks.map((b, i) => {
           const selected = value === b.type
           const accentRing = b.accent === 'growth' ? 'ring-growth-400' : 'ring-electric-400'
@@ -70,7 +79,7 @@ export default function BankSelector({ t, value, onSelect }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className={`card card-hover group relative overflow-hidden p-5 text-start transition sm:p-6 ${
+              className={`card card-hover group relative overflow-hidden p-3 text-start transition sm:p-6 ${
                 selected ? `ring-2 ${accentRing} ${accentGlow}` : ''
               }`}
             >
@@ -79,17 +88,17 @@ export default function BankSelector({ t, value, onSelect }) {
                   b.accent === 'growth' ? 'bg-growth-500' : 'bg-electric-500'
                 }`}
               />
-              <div className="relative space-y-4">
+              <div className="relative space-y-2 sm:space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="min-w-0 break-words text-lg font-semibold sm:text-xl">{t[b.titleKey]}</h3>
+                  <h3 className="min-w-0 break-words text-sm font-semibold sm:text-xl">{t[b.titleKey]}</h3>
                   {selected && (
                     <span className={`pill ${b.accent === 'growth' ? 'border-growth-400/40 text-growth-300' : 'border-electric-400/40 text-electric-400'}`}>
                       ✓
                     </span>
                   )}
                 </div>
-                <p className="break-words text-sm text-white/55">{t[b.descKey]}</p>
-                <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
+                <p className="break-words text-[11px] leading-snug text-white/55 sm:text-sm">{t[b.descKey]}</p>
+                <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-3 sm:gap-3 sm:pt-2">
                   <Stat label={t.pdThreshold} value={b.pd} accent={accentText} />
                   <Stat label={t.minScore} value={b.minScore} accent={accentText} />
                   <Stat label={t.approvalStyle} value={t[b.approvalKey]} accent={accentText} />
@@ -105,9 +114,9 @@ export default function BankSelector({ t, value, onSelect }) {
 
 function Stat({ label, value, accent }) {
   return (
-    <div className="min-w-0 rounded-xl border border-white/5 bg-white/[0.02] p-3">
-      <div className={`break-words text-base font-semibold ${accent}`}>{value}</div>
-      <div className="mt-1 text-[10px] uppercase tracking-wider text-white/40">{label}</div>
+    <div className="min-w-0 rounded-xl border border-white/5 bg-white/[0.02] p-2 sm:p-3">
+      <div className={`break-words text-sm font-semibold sm:text-base ${accent}`}>{value}</div>
+      <div className="mt-1 text-[9px] uppercase tracking-wider text-white/40 sm:text-[10px]">{label}</div>
     </div>
   )
 }

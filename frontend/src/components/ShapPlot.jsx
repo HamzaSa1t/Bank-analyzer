@@ -6,7 +6,9 @@ import { prettyFeature } from '../lib/featureLabels.js'
 const NEUTRAL_THRESHOLD = 0.005
 
 export default function ShapPlot({ top5, t }) {
-  const items = Array.isArray(top5) ? top5 : []
+  const items = (Array.isArray(top5) ? top5 : []).filter(
+    (d) => d?.feature !== 'CODE_GENDER_M' && !String(d?.feature ?? '').startsWith('CODE_GENDER'),
+  )
   // Normalize each driver's contribution as a share of the visible top-N
   // sum, so each row reads as a clean "X% impact" instead of a raw SHAP value.
   const total = items.reduce((sum, d) => sum + Math.abs(Number(d?.shap_value) || 0), 0)

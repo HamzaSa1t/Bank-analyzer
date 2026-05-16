@@ -873,12 +873,14 @@ function DriversBar({ t }) {
     fetchFeatureImportance()
       .then((res) => {
         if (cancelled || !res?.drivers?.length) return
-        const mapped = res.drivers.map((d) => ({
-          feat: prettyFeature(d.feature, t),
-          shap: Number(d.shap_mean_abs ?? 0),
-          impact: ['good', 'bad', 'neutral'].includes(d.impact) ? d.impact : 'neutral',
-          desc: (d.description_key && t[d.description_key]) || prettyFeature(d.feature, t),
-        }))
+        const mapped = res.drivers
+          .filter((d) => d.feature !== 'CODE_GENDER_M' && !String(d.feature ?? '').startsWith('CODE_GENDER'))
+          .map((d) => ({
+            feat: prettyFeature(d.feature, t),
+            shap: Number(d.shap_mean_abs ?? 0),
+            impact: ['good', 'bad', 'neutral'].includes(d.impact) ? d.impact : 'neutral',
+            desc: (d.description_key && t[d.description_key]) || prettyFeature(d.feature, t),
+          }))
         setDrivers(mapped)
       })
       .catch(() => { /* keep fallback */ })
@@ -1014,6 +1016,224 @@ function DriversBar({ t }) {
   )
 }
 
+// ---------- Section: Risk Strategy Comparison --------------------------
+
+const RS_FALLBACK = {
+  conservative: { precision: 0.141, recall: 0.844, approval_rate: 0.518, f1: 0.242 },
+  aggressive:   { precision: 0.262, recall: 0.474, approval_rate: 0.854, f1: 0.337 },
+}
+
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3 4 6v6c0 4.5 3.2 8.4 8 9 4.8-.6 8-4.5 8-9V6l-8-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
+}
+
+function GrowthArrowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 17 9 11l4 4 8-8" />
+      <path d="M14 4h7v7" />
+    </svg>
+  )
+}
+
+function RiskStrategyBlock({ t }) {
+  const [data, setData] = useState(RS_FALLBACK)
+  useEffect(() => {
+    let cancelled = false
+    fetchModelPerformance()
+      .then((res) => {
+        if (cancelled || !res?.conservative || !res?.aggressive) return
+        setData({
+          conservative: { ...RS_FALLBACK.conservative, ...res.conservative },
+          aggressive:   { ...RS_FALLBACK.aggressive,   ...res.aggressive   },
+        })
+      })
+      .catch(() => { /* keep fallback */ })
+    return () => { cancelled = true }
+  }, [])
+
+  const cards = [
+    {
+      key: 'conservative',
+      icon: <ShieldIcon />,
+      tone: 'safe',
+      title: t.rsConsTitle,
+      bullets: [t.rsConsBullet1, t.rsConsBullet2, t.rsConsBullet3],
+      badge: t.rsConsBadge,
+      values: data.conservative,
+      metricNotes: {
+        recall: t.rsConsRecall,
+        precision: t.rsConsPrecision,
+        approval_rate: t.rsConsApproval,
+        f1: t.rsConsF1,
+      },
+    },
+    {
+      key: 'aggressive',
+      icon: <GrowthArrowIcon />,
+      tone: 'risk',
+      title: t.rsAggTitle,
+      bullets: [t.rsAggBullet1, t.rsAggBullet2, t.rsAggBullet3],
+      badge: t.rsAggBadge,
+      values: data.aggressive,
+      metricNotes: {
+        recall: t.rsAggRecall,
+        precision: t.rsAggPrecision,
+        approval_rate: t.rsAggApproval,
+        f1: t.rsAggF1,
+      },
+    },
+  ]
+
+  return (
+    <div className="space-y-8">
+      <SectionHeader eyebrow={t.rsEyebrow} title={t.rsTitle} />
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: '-80px' }}
+        className="card relative overflow-hidden p-5 sm:p-6"
+      >
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-electric-500 blur-3xl opacity-15" />
+        <p className="relative break-words text-sm leading-relaxed text-white/80">
+          {t.rsIntroA}{' '}
+          {t.rsIntroB}{' '}
+          <span className="font-semibold text-white">{t.rsIntroBHighlight}</span>{' '}
+          {t.rsIntroC}
+        </p>
+      </motion.div>
+
+      <motion.div
+        variants={{ show: { transition: { staggerChildren: 0.1 } } }}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: '-80px' }}
+        className="grid gap-5 lg:grid-cols-2"
+      >
+        {cards.map((c) => (
+          <StrategyCard key={c.key} t={t} {...c} />
+        ))}
+      </motion.div>
+
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: '-80px' }}
+        className="card relative overflow-hidden border border-amber-400/30 p-5 sm:p-6"
+      >
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-amber-500 blur-3xl opacity-15" />
+        <div className="relative space-y-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center rounded-lg border border-amber-400/40 bg-amber-500/10 text-amber-300">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v5M12 16h.01" />
+              </svg>
+            </span>
+            <h5 className="min-w-0 break-words text-sm font-semibold text-amber-200">{t.rsInsightTitle}</h5>
+          </div>
+          <ul className="space-y-1.5 break-words text-xs leading-relaxed text-white/75">
+            <li className="flex min-w-0 items-start gap-2">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+              <span className="min-w-0 break-words">{t.rsInsightBullet1}</span>
+            </li>
+            <li className="flex min-w-0 items-start gap-2">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+              <span className="min-w-0 break-words">{t.rsInsightBullet2}</span>
+            </li>
+            <li className="flex min-w-0 items-start gap-2">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+              <span className="min-w-0 break-words">{t.rsInsightBullet3}</span>
+            </li>
+          </ul>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+function StrategyCard({ t, icon, tone, title, bullets, badge, values, metricNotes }) {
+  // tone 'safe' (blue/green) for conservative; 'risk' (orange/red) for aggressive.
+  const styles = tone === 'risk'
+    ? {
+        ring: 'border-orange-400/35',
+        blob: 'bg-orange-500',
+        iconWrap: 'border-orange-400/45 bg-orange-500/15 text-orange-200',
+        title: 'text-orange-200',
+        badge: 'border-red-400/40 bg-red-500/12 text-red-200',
+        metricValue: 'text-orange-200',
+        metricBorder: 'border-orange-400/25',
+        dot: 'bg-orange-300',
+      }
+    : {
+        ring: 'border-electric-400/35',
+        blob: 'bg-electric-500',
+        iconWrap: 'border-growth-400/40 bg-growth-500/15 text-growth-200',
+        title: 'text-electric-200',
+        badge: 'border-growth-400/40 bg-growth-500/12 text-growth-200',
+        metricValue: 'text-electric-200',
+        metricBorder: 'border-electric-400/25',
+        dot: 'bg-growth-300',
+      }
+
+  const pct = (n) => (n == null || Number.isNaN(Number(n))) ? '—' : `${(Number(n) * 100).toFixed(1)}%`
+
+  const metrics = [
+    { key: 'recall',        label: t.rsLabelRecall,    value: values?.recall,        note: metricNotes.recall        },
+    { key: 'precision',     label: t.rsLabelPrecision, value: values?.precision,     note: metricNotes.precision     },
+    { key: 'approval_rate', label: t.rsLabelApproval,  value: values?.approval_rate, note: metricNotes.approval_rate },
+    { key: 'f1',            label: t.rsLabelF1,        value: values?.f1,            note: metricNotes.f1            },
+  ]
+
+  return (
+    <motion.div
+      variants={fadeUp}
+      className={`card card-hover group relative overflow-hidden border ${styles.ring} p-5 sm:p-6`}
+    >
+      <div className={`absolute -right-16 -top-16 h-48 w-48 rounded-full blur-3xl opacity-20 transition group-hover:opacity-35 ${styles.blob}`} />
+      <div className="relative space-y-4">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border ${styles.iconWrap}`}>
+              {icon}
+            </span>
+            <h5 className={`min-w-0 break-words text-base font-semibold ${styles.title}`}>{title}</h5>
+          </div>
+          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${styles.badge}`}>
+            {badge}
+          </span>
+        </div>
+
+        <ul className="space-y-1.5 text-xs leading-relaxed text-white/75">
+          {bullets.map((b, i) => (
+            <li key={i} className="flex min-w-0 items-start gap-2">
+              <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${styles.dot}`} />
+              <span className="min-w-0 break-words">{b}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {metrics.map((m) => (
+            <div key={m.key} className={`min-w-0 space-y-1 rounded-xl border ${styles.metricBorder} bg-white/[0.02] p-3`}>
+              <div className={`break-words text-2xl font-extrabold tracking-tight ${styles.metricValue}`}>{pct(m.value)}</div>
+              <p className="break-words text-xs font-semibold text-white/85">{m.label}</p>
+              <p className="break-words text-[11px] leading-relaxed text-white/60">{m.note}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 // ---------- Section 6: Closing statement -------------------------------
 
 function ClosingBlock({ t }) {
@@ -1097,25 +1317,10 @@ export default function ModelPerformance({ t }) {
       <CollapsibleSection eyebrow={t.mpDecisionsEyebrow} title={t.mpDecisionsTitle}>
         <DecisionLogicBlock t={t} />
       </CollapsibleSection>
-      <CollapsibleSection eyebrow={t.mpExampleEyebrow} title={t.mpExampleTitle}>
-        <ExampleBlock t={t} />
-      </CollapsibleSection>
-      <CollapsibleSection eyebrow={t.mpAloneEyebrow} title={t.mpAloneTitle}>
-        <WhyAloneBlock t={t} />
-      </CollapsibleSection>
 
-      <div className="space-y-8">
-        <SectionHeader eyebrow={t.mpChartsEyebrow} title={t.mpChartsTitle} sub={t.mpPerfHeaderDesc} />
-        <PolicyMetricsBlock t={t} />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <AucGauge t={t} />
-          <ThresholdsBar t={t} />
-        </div>
-        <CalibrationLine t={t} />
-      </div>
+      <RiskStrategyBlock t={t} />
 
       <DriversBar t={t} />
-      <ClosingBlock t={t} />
     </section>
   )
 }

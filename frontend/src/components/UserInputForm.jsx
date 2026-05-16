@@ -21,9 +21,9 @@ export default function UserInputForm({ t, onSubmit, disabled, loading, employme
 
   return (
     <form onSubmit={submit} className="card space-y-6 p-5 sm:p-6 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="min-w-0 break-words text-xl font-semibold">{t.formTitle}</h3>
-        <span className="label-muted">02</span>
+      <div className="min-w-0">
+        <span className="label-muted block">{`${t.mpStep} 4`}</span>
+        <h3 className="mt-1 break-words text-xl font-semibold">{t.formTitle}</h3>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">

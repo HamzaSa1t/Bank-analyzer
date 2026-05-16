@@ -13,7 +13,7 @@ export default function SimahPanel({ t, simah, onSimulate, loading }) {
     <div className="card space-y-5 p-5 sm:p-6 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <span className="label-muted block">01</span>
+          <span className="label-muted block">{`${t.mpStep} 2`}</span>
           <h3 className="mt-1 break-words text-xl font-semibold">{t.simahTitle}</h3>
           <p className="mt-2 max-w-xl break-words text-sm text-white/55">{t.simahHelper}</p>
         </div>

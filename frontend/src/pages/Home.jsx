@@ -16,6 +16,7 @@ export default function Home({ t, lang }) {
   const applyRef = useRef(null)
   const simahRef = useRef(null)
   const reportRef = useRef(null)
+  const samaErrorRef = useRef(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -23,6 +24,12 @@ export default function Home({ t, lang }) {
       reportRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [a.result])
+
+  useEffect(() => {
+    if (a.error === 'sama_min_employment' && samaErrorRef.current) {
+      samaErrorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [a.error])
 
   const scrollToApply = () => {
     applyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -99,9 +106,10 @@ export default function Home({ t, lang }) {
 
         {a.error === 'sama_min_employment' && (
           <motion.div
+            ref={samaErrorRef}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="-mt-6 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+            className="-mt-6 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-300 scroll-mt-24"
             role="alert"
           >
             {t.samaMinEmployment}

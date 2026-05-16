@@ -10,7 +10,7 @@ export default function GosiPanel({ t, gosi }) {
   return (
     <div className="card space-y-5 p-5 sm:p-6 md:p-8">
       <div className="min-w-0">
-        <span className="label-muted block">01b</span>
+        <span className="label-muted block">{`${t.mpStep} 3`}</span>
         <h3 className="mt-1 break-words text-xl font-semibold">{t.gosiTitle}</h3>
         <p className="mt-2 max-w-xl break-words text-sm text-white/55">{t.gosiHelper}</p>
       </div>
