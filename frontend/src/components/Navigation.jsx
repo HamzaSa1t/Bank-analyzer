@@ -69,7 +69,7 @@ export default function Navigation({ t, lang, onLangChange }) {
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="pill grid h-9 w-9 place-items-center md:hidden hover:bg-white/10"
+            className="pill !p-0 grid h-9 w-9 place-items-center md:hidden hover:bg-white/10"
             aria-label={menuOpen ? (t.menuClose || 'Close menu') : (t.menuOpen || 'Open menu')}
             aria-expanded={menuOpen}
             aria-controls="mobile-nav-panel"
